@@ -1,0 +1,8 @@
+numpy>=2.0
+Pillow
+# target generator (generate.py); without these the app falls back to retrieval
+torch
+diffusers
+transformers
+peft
+accelerate

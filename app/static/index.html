@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SketchFade</title>
+<style>
+  body { margin: 0; font-family: "Segoe UI", sans-serif; background: #e8e4da; color: #4a4234;
+         display: flex; justify-content: center; gap: 18px; padding: 24px; }
+  #board { position: relative; width: 480px; height: 480px; background: #f7f2e7;
+           border-radius: 6px; box-shadow: 0 6px 24px rgba(60,50,30,.25); touch-action: none; }
+  #board img, #board canvas { position: absolute; inset: 0; width: 480px; height: 480px; }
+  #ui { width: 240px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+  h1 { font-size: 18px; margin: 0; }
+  .row { display: flex; gap: 6px; }
+  button { flex: 1; padding: 7px 4px; border: 1px solid #c9bfa8; border-radius: 6px;
+           background: #fbf8f0; color: inherit; cursor: pointer; }
+  button:disabled { opacity: .4; cursor: default; }
+  .muted { color: #8a8172; font-size: 12px; }
+  label { display: block; }
+  input[type=range] { width: 100%; }
+  .part { margin: 4px 0; }
+  .bar { height: 6px; background: #ddd5c3; border-radius: 3px; }
+  .bar div { height: 100%; background: #3b4d8f; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="board">
+  <img id="ghost" alt="">
+  <canvas id="ink" width="480" height="480"></canvas>
+</div>
+<div id="ui">
+  <h1>SketchFade</h1>
+  <div id="phase" class="muted"></div>
+
+  <input id="prompt" placeholder="prompt, e.g. old man with a beard"
+         style="padding:6px; border:1px solid #c9bfa8; border-radius:6px">
+  <div class="row">
+    <button id="pin">Generate target</button>
+    <button id="regen" disabled>Regenerate</button>
+  </div>
+  <div class="row">
+    <button id="prev" disabled>&larr;</button>
+    <button id="layer" disabled style="flex:2">&ndash;</button>
+    <button id="next" disabled>&rarr;</button>
+  </div>
+  <div class="row">
+    <button id="check" disabled>Check</button>
+    <button id="clear">Clear</button>
+    <button id="restart">New</button>
+  </div>
+  <label><input type="checkbox" id="test"> Test mode (no help)</label>
+  <label>Pen width: <span id="penVal">3</span> px
+    <input type="range" id="pen" min="1" max="12" value="3"></label>
+  <label>AI help strength: <span id="helpVal">100</span>%
+    <input type="range" id="help" min="0" max="100" value="100"></label>
+
+  <div id="skill"></div>
+  <div id="status" class="muted"></div>
+  <button id="save">Save session</button>
+</div>
+
+<script>
+const ink = document.getElementById("ink"), ctx = ink.getContext("2d");
+const ghostImg = document.getElementById("ghost");
+const $ = id => document.getElementById(id);
+let phase = "sketch", strokes = [], cur = null, st = null, lastGhost = "";
+
+async function post(url, body = {}) {
+  let j;
+  try {
+    const r = await fetch(url, { method: "POST", body: JSON.stringify({ ...body, test: $("test").checked }) });
+    j = await r.json();
+  } catch (err) {
+    j = { error: "server unreachable: " + err };
+  }
+  if (j.error) { $("status").textContent = j.error; console.error(url, j.error); }
+  return j;
+}
+
+function setGhost(b64) { ghostImg.src = b64 ? "data:image/png;base64," + b64 : ""; }
+
+function redraw() {
+  ctx.clearRect(0, 0, 480, 480);
+  ctx.strokeStyle = "#24346e"; ctx.lineCap = ctx.lineJoin = "round";
+  for (const s of strokes.concat(cur ? [cur] : [])) {
+    ctx.lineWidth = s.w;
+    ctx.beginPath();
+    s.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.stroke();
+  }
+}
+
+function show(s) {
+  if (!s || s.error) return;
+  st = s; lastGhost = s.ghost; setGhost(s.ghost);
+  $("layer").textContent = `${s.layer + 1}. ${s.layers[s.layer]}`;
+  $("prev").disabled = s.layer === 0;
+  $("next").disabled = s.layer === s.layers.length - 1;
+  $("skill").innerHTML = s.skill.map(p =>
+    `<div class="part"><b>${p.part}</b> <span class="muted">${p.level}</span>
+     <div class="bar"><div style="width:${p.s * 100}%"></div></div></div>`).join("");
+  $("phase").textContent = `Target ${s.target} · draw the ghost layer by layer`;
+}
+
+function setPhase(p) {
+  phase = p;
+  for (const id of ["regen", "check", "prev", "next", "layer"]) $(id).disabled = p === "sketch";
+  if (p === "sketch") {
+    $("phase").textContent = "Sketch a rough face, add a prompt, then Generate";
+    $("layer").innerHTML = "&ndash;";
+  }
+}
+
+// rough-sketch phase: one shadow request at a time, newest strokes win
+let busy = false, dirty = false;
+async function updateShadow() {
+  if (busy) { dirty = true; return; }
+  busy = true;
+  setGhost((await post("/api/shadow", { strokes })).shadow);
+  busy = false;
+  if (dirty) { dirty = false; updateShadow(); }
+}
+
+async function onStroke(s) {
+  if (phase === "sketch") return updateShadow();
+  const r = await post("/api/stroke", { pts: s.pts, w: s.w, help: helpStrength() });
+  if (r.error) return;
+  s.pts = r.pts; redraw(); show(r);
+  $("status").textContent = `last stroke: ${r.part}, error ${r.err}px`;
+}
+
+const pos = e => { const b = ink.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+ink.onpointerdown = e => { ink.setPointerCapture(e.pointerId); cur = { pts: [pos(e)], w: +$("pen").value }; };
+ink.onpointermove = e => { if (cur) { cur.pts.push(pos(e)); redraw(); } };
+ink.onpointerup = () => {
+  if (!cur) return;
+  const s = cur; cur = null;
+  if (s.pts.length < 2) return redraw();
+  strokes.push(s); onStroke(s);
+};
+
+// generating the hidden target takes ~1 s on a GPU, ~1 min on a CPU: block the buttons meanwhile
+async function generating(url, body) {
+  const btns = [...document.querySelectorAll("button")], was = btns.map(b => b.disabled);
+  btns.forEach(b => b.disabled = true);
+  $("status").textContent = "generating hidden target ... (first time also loads the model)";
+  const r = await post(url, body);
+  btns.forEach((b, i) => b.disabled = was[i]);
+  if (!r.error) $("status").textContent = "target ready: draw layer by layer";
+  return r;
+}
+$("pin").onclick = async () => {
+  const r = await generating("/api/pin", { strokes, prompt: $("prompt").value });
+  if (r.error) return;
+  strokes = []; redraw(); setPhase("draw"); show(r);
+};
+$("regen").onclick = async () => {
+  const r = await generating("/api/regenerate");
+  if (r.error) return;
+  strokes = []; redraw(); show(r);
+};
+$("prev").onclick = async () => show(await post("/api/layer", { layer: st.layer - 1 }));
+$("next").onclick = async () => show(await post("/api/layer", { layer: st.layer + 1 }));
+$("test").onchange = async () => { if (st) show(await post("/api/layer", { layer: st.layer })); };
+$("check").onclick = async () => {
+  const r = await post("/api/check");
+  setGhost(r.ghost);
+  setTimeout(() => setGhost(lastGhost), 2000);
+};
+$("clear").onclick = async () => {
+  strokes = []; redraw();
+  if (phase === "sketch") updateShadow();
+};
+$("restart").onclick = async () => {
+  strokes = []; redraw(); setGhost(""); st = null; setPhase("sketch");
+  await post("/api/shadow", { strokes });
+};
+// sliders: pen width for new strokes; AI help strength scales the shadow /
+// ghost opacity here and the stroke correction on the server
+const helpStrength = () => $("help").value / 100;
+$("pen").oninput = () => { $("penVal").textContent = $("pen").value; };
+$("help").oninput = () => {
+  $("helpVal").textContent = $("help").value;
+  ghostImg.style.opacity = helpStrength();
+};
+$("save").onclick = async () => { $("status").textContent = "saved " + (await post("/api/save")).file; };
+
+setPhase("sketch");
+</script>
+</body>
+</html>

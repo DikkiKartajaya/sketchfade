@@ -1,0 +1,18 @@
+2026-10-30 19:21:02,206 INFO  === SketchFade start, port 9100 ===
+2026-10-30 19:21:02,207 INFO  skill loaded: head=0.36 eyes=0.00 nose=0.18 mouth=0.00
+2026-10-30 19:21:02,412 INFO  ShadowDraw engine ready: 2175 images (0.2s)
+2026-10-30 19:21:02,412 INFO  serving on http://127.0.0.1:9100
+2026-10-30 19:21:04,332 INFO  GET / (page loaded)
+2026-10-30 19:21:19,550 INFO  shadow strokes=1 top=s_29266(1.93), s_28206(1.18), s_28102(0.80)
+2026-10-30 19:21:19,671 INFO  POST /api/shadow 200 11522ms
+2026-10-30 19:21:38,950 INFO  shadow strokes=2 top=s_29266(1.49), s_28206(1.29), s_27643(0.80)
+2026-10-30 19:21:38,991 INFO  POST /api/shadow 200 6843ms
+2026-10-30 19:21:45,282 INFO  shadow strokes=5 top=s_29266(1.82), s_29295(1.37), s_27619(0.93)
+2026-10-30 19:21:45,361 INFO  POST /api/shadow 200 6323ms
+2026-10-30 19:21:49,833 INFO  shadow strokes=9 top=s_29266(1.92), s_29295(1.27), s_27619(0.79)
+2026-10-30 19:21:49,871 INFO  POST /api/shadow 200 4485ms
+2026-10-30 19:21:52,932 INFO  shadow strokes=10 top=s_29266(1.98), s_29295(1.27), s_29004(0.78)
+2026-10-30 19:21:52,971 INFO  POST /api/shadow 200 3080ms
+2026-10-30 19:22:20,670 INFO  shadow strokes=0 top=-
+2026-10-30 19:22:20,674 INFO  POST /api/shadow 200 2544ms
+2026-10-30 19:22:26,267 INFO  === SketchFade stop ===

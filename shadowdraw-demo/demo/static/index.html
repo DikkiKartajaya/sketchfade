@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ShadowDraw — Faces</title>
+<style>
+  :root { color-scheme: light; }
+  body {
+    margin: 0; font-family: -apple-system, "Segoe UI", sans-serif;
+    background: #e8e4da; display: flex; min-height: 100vh;
+    align-items: flex-start; justify-content: center;
+  }
+  #app { display: flex; flex-direction: column; gap: 14px; align-items: center; padding: 24px 0; }
+  #main { display: flex; gap: 18px; align-items: flex-start; }
+  /* ---- pipeline drawer ---- */
+  #drawer {
+    display: none; width: 984px; background: #fbf8f0;
+    border: 1px solid #d8cfb8; border-radius: 8px; padding: 10px 12px;
+    box-shadow: 0 4px 14px rgba(60,50,30,.12); font-size: 12px; color: #4a4234;
+  }
+  #drawer.open { display: block; }
+  #dhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  #dhead .stat { color: #8a8172; }
+  #dhead button { flex: none; padding: 3px 10px; font-size: 12px; }
+  #dhead button.frozen { background: #a33; color: #fff; border-color: #a33; }
+  #timing { display: flex; height: 10px; border-radius: 5px; overflow: hidden;
+            width: 200px; }
+  #timing div { height: 100%; }
+  #strip { display: flex; flex-wrap: nowrap; gap: 8px; padding-bottom: 6px;
+           overflow-x: auto; }
+  .card { flex: none; width: 118px; cursor: pointer; border: 2px solid transparent;
+          border-radius: 6px; padding: 4px; background: #f4efe2; }
+  .card.sel { border-color: #3b4d8f; }
+  .card img { width: 110px; height: 110px; image-rendering: auto; display: block;
+              background: #fff; border-radius: 3px; }
+  .card .t { font-weight: 600; margin: 3px 0 1px; }
+  .card .c { color: #8a8172; font-size: 10.5px; line-height: 1.25; }
+  #detail { border-top: 1px solid #e2d9c4; margin-top: 6px; padding-top: 8px;
+            min-height: 40px; }
+  .cellgrid { display: grid; grid-template-columns: repeat(17, 15px); gap: 1px; }
+  .cellgrid div { width: 15px; height: 15px; background: #eee7d6; border-radius: 2px;
+                  cursor: pointer; }
+  .cellgrid div.inky { background: #9fb0dd; }
+  .cellgrid div.changed { background: #e0a35c; }
+  .cellgrid div.selc { outline: 2px solid #3b4d8f; }
+  .voterow { display: flex; align-items: center; gap: 6px; margin: 2px 0;
+             cursor: pointer; }
+  .voterow .bar { height: 10px; background: #6b7fc4; border-radius: 3px; }
+  .candcard { display: inline-block; vertical-align: top; width: 112px;
+              margin: 0 6px 6px 0; padding: 4px; background: #f4efe2;
+              border-radius: 6px; cursor: pointer; border: 2px solid transparent; }
+  .candcard.sel { border-color: #3b4d8f; }
+  .candcard img { width: 104px; height: 104px; background: #fff; display: block; }
+  .mono { font-family: ui-monospace, monospace; font-size: 10.5px; }
+  #bigview img { image-rendering: auto; }
+  .matchrow img { width: 72px; height: 72px; background: #fff; margin-right: 4px; }
+  input[type=range].wide { width: 220px; }
+  #board {
+    position: relative; width: 480px; height: 480px;
+    border-radius: 6px; box-shadow: 0 6px 24px rgba(60,50,30,.25);
+    background:
+      radial-gradient(circle at 30% 20%, rgba(255,255,255,.45), transparent 60%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.47 0 0 0 0 0.39 0 0 0 0 0.24 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"),
+      #f7f2e7;
+    touch-action: none; overflow: hidden;
+  }
+  #board canvas { position: absolute; inset: 0; }
+  #ui { width: 210px; display: flex; flex-direction: column; gap: 10px; }
+  h1 { font-size: 17px; margin: 0 0 4px; color: #4a4234; }
+  .row { display: flex; gap: 6px; }
+  button {
+    flex: 1; padding: 7px 4px; border: 1px solid #c9bfa8; border-radius: 6px;
+    background: #fbf8f0; color: #4a4234; font-size: 13px; cursor: pointer;
+  }
+  button.active { background: #3b4d8f; color: #fff; border-color: #3b4d8f; }
+  label { font-size: 12px; color: #6a6152; }
+  input[type=range] { width: 100%; }
+  #status { font-size: 11px; color: #8a8172; min-height: 28px; }
+  #matches { font-size: 11px; color: #6a6152; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div id="app">
+ <div id="main">
+  <div id="board">
+    <canvas id="shadowC" width="480" height="480"></canvas>
+    <canvas id="overlayC" width="480" height="480"></canvas>
+    <canvas id="inkC" width="480" height="480"></canvas>
+  </div>
+  <div id="ui">
+    <h1>ShadowDraw — Faces</h1>
+    <div class="row">
+      <button id="penB" class="active">Pen</button>
+      <button id="eraseB">Eraser</button>
+    </div>
+    <div class="row">
+      <button id="undoB">Undo</button>
+      <button id="clearB">Clear</button>
+    </div>
+    <div class="row">
+      <button id="shadowB" class="active">Shadow: on</button>
+    </div>
+    <label>Shadow strength (&lambda;)
+      <input id="lambda" type="range" min="0" max="100" value="55">
+    </label>
+    <div class="row"><button id="saveB">Save session</button></div>
+    <div class="row"><button id="pipeB">Pipeline &#9662;</button></div>
+    <div id="status">draw to see shadows&hellip;</div>
+    <div id="matches"></div>
+  </div>
+ </div>
+ <div id="drawer">
+   <div id="dhead">
+     <button id="freezeB" title="stop following new strokes">&#128204; Freeze</button>
+     <label><input type="checkbox" id="ovCells"> cells</label>
+     <label><input type="checkbox" id="ovAlign"> top-1 alignment</label>
+     <div id="timing"></div>
+     <span class="stat" id="dstats">no data yet — draw a stroke</span>
+   </div>
+   <div id="strip"></div>
+   <div id="detail"></div>
+ </div>
+</div>
+<script>
+const inkC = document.getElementById('inkC');
+const shadowC = document.getElementById('shadowC');
+const ink = inkC.getContext('2d');
+const shc = shadowC.getContext('2d');
+const board = document.getElementById('board');
+
+let strokes = [];          // {pts:[[x,y],..], erase:bool, w:px, t0:ms}
+let cur = null;
+let erasing = false;
+let shadowOn = true;
+let lambda = 0.55;
+let cursor = {x: 240, y: 240, active: false};
+
+let shadowImg = null;      // current Image
+let shadowAlpha = 0;       // fade-in
+let pending = false, dirty = false;
+const t_start = Date.now();
+
+// ---- drawing ----------------------------------------------------------
+function redrawInk() {
+  ink.clearRect(0, 0, 480, 480);
+  for (const s of strokes) drawStroke(ink, s);
+  if (cur) drawStroke(ink, cur);
+}
+function drawStroke(ctx, s) {
+  ctx.save();
+  ctx.lineCap = ctx.lineJoin = 'round';
+  if (s.erase) {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineWidth = 22; ctx.strokeStyle = 'rgba(0,0,0,1)';
+  } else {
+    ctx.lineWidth = s.w; ctx.strokeStyle = 'rgba(36,52,110,0.88)';
+  }
+  ctx.beginPath();
+  const p = s.pts;
+  ctx.moveTo(p[0][0], p[0][1]);
+  for (let i = 1; i < p.length; i++) ctx.lineTo(p[i][0], p[i][1]);
+  if (p.length === 1) ctx.lineTo(p[0][0] + .1, p[0][1] + .1);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function boardXY(e) {
+  const r = board.getBoundingClientRect();
+  return [(e.clientX - r.left) * 480 / r.width,
+          (e.clientY - r.top) * 480 / r.height];
+}
+board.addEventListener('pointerdown', e => {
+  board.setPointerCapture(e.pointerId);
+  const [x, y] = boardXY(e);
+  cur = {pts: [[x, y]], erase: erasing, w: 3, t0: Date.now() - t_start};
+  cursor = {x, y, active: true};
+  redrawInk();
+});
+board.addEventListener('pointermove', e => {
+  const [x, y] = boardXY(e);
+  cursor.x = x; cursor.y = y;
+  if (!cur) return;
+  const p = cur.pts[cur.pts.length - 1];
+  if (Math.hypot(x - p[0], y - p[1]) >= 2.2) {
+    cur.pts.push([x, y]);
+    redrawInk();
+  }
+});
+function endStroke() {
+  if (!cur) return;
+  cur.t1 = Date.now() - t_start;
+  strokes.push(cur); cur = null;
+  redrawInk(); requestShadow();
+}
+board.addEventListener('pointerup', endStroke);
+board.addEventListener('pointercancel', endStroke);
+
+// mid-stroke updates (throttled), like the paper's continuous feedback
+setInterval(() => {
+  if (cur && cur.pts.length > 6) requestShadow(true);
+}, 900);
+
+// ---- shadow requests ---------------------------------------------------
+async function requestShadow(partial) {
+  if (pending) { dirty = true; return; }
+  pending = true;
+  const body = {strokes: partial && cur ? strokes.concat([cur]) : strokes,
+                debug: drawerOpen && !frozen};
+  try {
+    const r = await fetch('/api/shadow', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)});
+    const j = await r.json();
+    const img = new Image();
+    img.onload = () => { shadowImg = img; tintShadow(); shadowAlpha = 0; };
+    img.src = 'data:image/png;base64,' + j.shadow;
+    document.getElementById('status').textContent =
+      `shadow: ${j.ms} ms · strokes: ${strokes.length}`;
+    document.getElementById('matches').innerHTML = (j.top || [])
+      .map(m => `${m.name} <span style="opacity:.6">v=${m.v}</span>`).join('<br>');
+    if (j.dbg && !frozen) { lastDbg = j.dbg; renderDbg(); }
+  } catch (err) {
+    document.getElementById('status').textContent = 'server error: ' + err;
+  }
+  pending = false;
+  if (dirty) { dirty = false; requestShadow(); }
+}
+
+// ---- shadow compositing (fade-in + cursor-proximity contrast, eq. 13) ---
+const tmp = document.createElement('canvas');
+tmp.width = tmp.height = 480;
+const tctx = tmp.getContext('2d');
+const maskC = document.createElement('canvas');
+maskC.width = maskC.height = 480;
+
+function tintShadow() {
+  // convert the intensity PNG to sepia-ink-with-alpha ONCE per new shadow
+  tctx.clearRect(0, 0, 480, 480);
+  tctx.imageSmoothingEnabled = true;
+  tctx.drawImage(shadowImg, 0, 0, 480, 480);
+  const d = tctx.getImageData(0, 0, 480, 480);
+  const a = d.data;
+  for (let i = 0; i < a.length; i += 4) {
+    const v = a[i];               // intensity 0..255
+    a[i] = 96; a[i + 1] = 82; a[i + 2] = 60;  // sepia stroke color
+    a[i + 3] = v;                 // alpha = intensity
+  }
+  tctx.putImageData(d, 0, 0);
+}
+
+function tick() {
+  shc.clearRect(0, 0, 480, 480);
+  if (shadowImg && shadowOn) {
+    shadowAlpha = Math.min(1, shadowAlpha + 0.07);
+    // base strength
+    shc.globalAlpha = shadowAlpha * lambda * 0.85;
+    shc.drawImage(tmp, 0, 0);
+    // cursor-proximity boost (sigma ~120 px)
+    if (cursor.active) {
+      const mc = maskC.getContext('2d');
+      mc.globalCompositeOperation = 'source-over';
+      mc.clearRect(0, 0, 480, 480);
+      mc.drawImage(tmp, 0, 0);
+      const g = mc.createRadialGradient(cursor.x, cursor.y, 0,
+                                        cursor.x, cursor.y, 190);
+      g.addColorStop(0, 'rgba(0,0,0,1)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      mc.globalCompositeOperation = 'destination-in';
+      mc.fillStyle = g; mc.fillRect(0, 0, 480, 480);
+      shc.globalAlpha = shadowAlpha * lambda * 0.8;
+      shc.drawImage(maskC, 0, 0);
+    }
+    shc.globalAlpha = 1;
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// ---- controls ----------------------------------------------------------
+const penB = document.getElementById('penB');
+const eraseB = document.getElementById('eraseB');
+penB.onclick = () => { erasing = false; penB.classList.add('active'); eraseB.classList.remove('active'); };
+eraseB.onclick = () => { erasing = true; eraseB.classList.add('active'); penB.classList.remove('active'); };
+document.getElementById('undoB').onclick = () => { strokes.pop(); redrawInk(); requestShadow(); };
+document.getElementById('clearB').onclick = () => { strokes = []; redrawInk(); requestShadow(); };
+const shadowB = document.getElementById('shadowB');
+shadowB.onclick = () => {
+  shadowOn = !shadowOn;
+  shadowB.textContent = 'Shadow: ' + (shadowOn ? 'on' : 'off');
+  shadowB.classList.toggle('active', shadowOn);
+};
+document.getElementById('lambda').oninput = e => { lambda = e.target.value / 100; };
+document.getElementById('saveB').onclick = async () => {
+  const r = await fetch('/api/save', {method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({strokes, saved: Date.now()})});
+  const j = await r.json();
+  document.getElementById('status').textContent = 'saved: ' + j.file;
+};
+
+// ======================= pipeline visualization ==========================
+let drawerOpen = false, frozen = false, lastDbg = null;
+let selStep = null, selCell = null, selCand = null, playTimer = null;
+const drawer = document.getElementById('drawer');
+const ovc = document.getElementById('overlayC').getContext('2d');
+let ovAlignImg = null;
+
+const pipeB = document.getElementById('pipeB');
+pipeB.onclick = () => {
+  drawerOpen = !drawerOpen;
+  drawer.classList.toggle('open', drawerOpen);
+  pipeB.innerHTML = drawerOpen ? 'Pipeline &#9652;' : 'Pipeline &#9662;';
+  pipeB.classList.toggle('active', drawerOpen);
+  if (drawerOpen && strokes.length) requestShadow();  // fetch a debug snapshot
+};
+const freezeB = document.getElementById('freezeB');
+freezeB.onclick = () => {
+  frozen = !frozen;
+  freezeB.classList.toggle('frozen', frozen);
+  freezeB.innerHTML = frozen ? '&#9654; Follow' : '&#128204; Freeze';
+};
+
+// ---- step strip ----
+const STEPS = [
+  {id: 'raster',  t: 'Ẽ rasterized',  c: 'strokes → 300×300 edge image'},
+  {id: 'orient',  t: '(θ̃, m)',    c: 'orientation field (hue = angle)'},
+  {id: 'grid',    t: 'patch grid',           c: '17×17 cells · incremental votes'},
+  {id: 'votes',   t: 'vote histogram',       c: 'top images × (9×9 offsets)'},
+  {id: 'cands',   t: 'C: d, hᵢ, vᵢ', c: 'aligned candidates + weights'},
+  {id: 'comp',    t: 'S = Σ WᵢE′ᵢ', c: 'weighted composite'},
+  {id: 'filt',    t: 'S̃ (eq.12)',      c: 'display filtering'},
+];
+function cardImg(id) {
+  if (!lastDbg) return '';
+  const map = {raster: lastDbg.raster, orient: lastDbg.orient,
+               grid: lastDbg.raster, votes: lastDbg.cands[0] ? lastDbg.cands[0].thumb : '',
+               cands: lastDbg.cands[0] ? lastDbg.cands[0].vmap : '',
+               comp: lastDbg.S, filt: lastDbg.S_filt};
+  return map[id] || '';
+}
+function renderStrip() {
+  const strip = document.getElementById('strip');
+  strip.innerHTML = '';
+  for (const s of STEPS) {
+    const el = document.createElement('div');
+    el.className = 'card' + (selStep === s.id ? ' sel' : '');
+    el.innerHTML = `<img src="data:image/png;base64,${cardImg(s.id)}">` +
+                   `<div class="t">${s.t}</div><div class="c">${s.c}</div>`;
+    el.onclick = () => { selStep = (selStep === s.id) ? null : s.id;
+                         stopPlay(); renderStrip(); renderDetail(); };
+    strip.appendChild(el);
+  }
+}
+
+// ---- detail views ----
+const detail = document.getElementById('detail');
+function renderDetail() {
+  stopPlay();
+  if (!lastDbg || !selStep) { detail.innerHTML = ''; return; }
+  const d = lastDbg;
+  if (selStep === 'raster') {
+    detail.innerHTML = `<img src="data:image/png;base64,${d.raster}" width="300">
+      <span class="c">what the engine actually matches — check stroke width /
+      placement here if shadows look off</span>`;
+  } else if (selStep === 'orient') {
+    detail.innerHTML = `<img src="data:image/png;base64,${d.orient}" width="300">
+      <span class="c">edge tangent orientation θ̃ (hue), gradient
+      magnitude m (brightness); feeds BiCE + ϑ± correlation</span>`;
+  } else if (selStep === 'grid') {
+    renderGrid();
+  } else if (selStep === 'votes') {
+    renderVotes();
+  } else if (selStep === 'cands') {
+    renderCands();
+  } else if (selStep === 'comp') {
+    renderComposite();
+  } else if (selStep === 'filt') {
+    detail.innerHTML =
+      `<img src="data:image/png;base64,${d.S}" width="220" title="S">
+       <img src="data:image/png;base64,${d.S_filt}" width="220" title="S filtered">
+       <span class="c">left: raw S &nbsp;→&nbsp; right: S̃ after
+       eq.12-style reinforcement + 1.25px blur</span>`;
+  }
+}
+
+function renderGrid() {
+  const inky = new Set(lastDbg.cells_inky.map(c => c.join(',')));
+  const chg = new Set(lastDbg.cells_changed.map(c => c.join(',')));
+  let html = `<div style="display:flex; gap:14px">
+    <div><div class="cellgrid" id="cg"></div>
+    <div class="c" style="margin-top:4px">blue: voting cells (${inky.size})
+    · orange: recomputed this update (${chg.size}) — click a cell for its
+    BiCE descriptor</div></div><div id="patchview"></div></div>`;
+  detail.innerHTML = html;
+  const cg = document.getElementById('cg');
+  for (let ky = 0; ky < 17; ky++) for (let kx = 0; kx < 17; kx++) {
+    const cell = document.createElement('div');
+    const key = kx + ',' + ky;
+    if (chg.has(key)) cell.className = 'changed';
+    else if (inky.has(key)) cell.className = 'inky';
+    if (selCell === key) cell.classList.add('selc');
+    cell.onclick = async () => {
+      selCell = key;
+      renderGrid();
+      const r = await fetch(`/api/inspect/patch?kx=${kx}&ky=${ky}`);
+      const p = await r.json();
+      const pv = document.getElementById('patchview');
+      if (p.error) { pv.textContent = p.error; return; }
+      pv.innerHTML =
+        `<div><img src="data:image/png;base64,${p.patch}" width="90">
+         patch (${kx},${ky})</div>
+         <div class="c">descriptor channels θ = 0° 45° 90° 135°
+         (18 perp × 6 tan bins):</div>
+         <div>${p.channels.map(c =>
+           `<img src="data:image/png;base64,${c}" height="52" style="margin-right:3px">`).join('')}</div>
+         <div class="c">top matches (Jaccard):</div>
+         <div class="matchrow">${p.matches.map(m =>
+           `<span style="display:inline-block;text-align:center" class="mono">
+            <img src="data:image/png;base64,${m.img}"><br>${m.score}</span>`).join('')}</div>`;
+    };
+    cg.appendChild(cell);
+  }
+}
+
+function renderVotes() {
+  const rows = lastDbg.vote_top;
+  const mx = rows[0] ? rows[0].score : 1;
+  detail.innerHTML = `<div style="display:flex; gap:16px">
+    <div id="vrows" style="width:320px"></div><div id="vheat"></div></div>`;
+  const vr = document.getElementById('vrows');
+  rows.forEach((r, idx) => {
+    const el = document.createElement('div');
+    el.className = 'voterow mono';
+    el.innerHTML = `<span style="width:70px">${r.name}</span>
+      <div class="bar" style="width:${(r.score / mx * 160) | 0}px"></div>
+      <span>${r.score.toFixed(1)}</span>`;
+    el.onclick = () => renderOffgrid(r);
+    vr.appendChild(el);
+    if (idx === 0) renderOffgrid(r);
+  });
+}
+function renderOffgrid(r) {
+  const g = r.offgrid;
+  let mx = 1e-9;
+  for (const row of g) for (const x of row) mx = Math.max(mx, x);
+  let html = `<div class="c">${r.name}: votes over offsets
+    (oₓ, oᵧ) ∈ [−4,4] · 15px units</div>
+    <div style="display:grid;grid-template-columns:repeat(9,20px);gap:1px">`;
+  for (let oy = 0; oy < 9; oy++) for (let ox = 0; ox < 9; ox++) {
+    const t = g[oy][ox] / mx;
+    html += `<div style="width:20px;height:20px;border-radius:2px;
+      background:rgba(59,77,143,${(t * 0.95 + 0.05).toFixed(2)})"
+      title="o=(${ox - 4},${oy - 4}) ${g[oy][ox].toFixed(1)}"></div>`;
+  }
+  document.getElementById('vheat').innerHTML = html + '</div>';
+}
+
+function sparkline(arr, w, hgt, color) {
+  const mn = Math.min(...arr), mx = Math.max(...arr);
+  const pts = arr.map((y, i) =>
+    `${(i / (arr.length - 1) * w).toFixed(1)},` +
+    `${(hgt - (y - mn) / (mx - mn + 1e-9) * hgt).toFixed(1)}`).join(' ');
+  const mid = w / 2;
+  return `<svg width="${w}" height="${hgt}">
+    <line x1="${mid}" y1="0" x2="${mid}" y2="${hgt}" stroke="#ccc"/>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.4"/></svg>`;
+}
+
+function renderCands() {
+  detail.innerHTML = `<div id="ccards"></div><div id="bigview"></div>`;
+  const cc = document.getElementById('ccards');
+  lastDbg.cands.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'candcard' + (selCand === c.rank ? ' sel' : '');
+    el.innerHTML = `<img src="data:image/png;base64,${c.thumb}">
+      <div class="mono">${c.name}<br>
+      v=${c.v} h=${c.h}<br>
+      d₀=(${c.d0}) → d=(${c.d})</div>
+      ${sparkline(c.tx, 104, 22, '#3b4d8f')}${sparkline(c.ty, 104, 22, '#8f5d3b')}
+      <img src="data:image/png;base64,${c.vmap}" title="V_i">`;
+    el.onclick = async () => {
+      selCand = c.rank;
+      renderCands();
+      const r = await fetch(`/api/inspect/cand?rank=${c.rank}`);
+      const b = await r.json();
+      if (b.error) return;
+      document.getElementById('bigview').innerHTML =
+        `<div class="c">${b.name}: drawing over aligned E′ ·
+         V_i (spatial weight, eq.8) · contribution WᵢE′ᵢ</div>
+         <img src="data:image/png;base64,${b.overlay}" width="300">
+         <img src="data:image/png;base64,${b.vmap}" width="300">
+         ${b.contrib ? `<img src="data:image/png;base64,${b.contrib}" width="300">` : ''}`;
+    };
+    cc.appendChild(el);
+  });
+  cc.insertAdjacentHTML('beforeend',
+    `<div class="c">Tx (blue) / Ty (brown): 1D Hough curves (eq.3) around the
+     refined d — peak at center = converged · h* = ${lastDbg.h_star},
+     α = ${lastDbg.alpha}, active candidates: ${lastDbg.n_active}</div>`);
+}
+
+function renderComposite() {
+  const P = lastDbg.partials;
+  const C = lastDbg.cands;
+  let html = `<div class="c" style="margin-bottom:6px">running composite
+    S = Σ WᵢE′ᵢ — column k shows S after adding the top-k candidates
+    (${lastDbg.n_active} active total)</div><div style="display:flex; gap:10px">`;
+  for (let k = 0; k < P.length; k++) {
+    const c = C[k] || {};
+    html += `<div style="text-align:center">
+      <div class="mono" style="margin-bottom:2px">top-${k + 1}</div>
+      <img width="150" src="data:image/png;base64,${P[k]}">
+      <div class="mono" style="margin-top:4px">+ ${c.name || ''} ` +
+      `<span style="opacity:.6">v=${c.v != null ? c.v : ''}</span></div>
+    </div>`;
+  }
+  detail.innerHTML = html + '</div>';
+}
+function stopPlay() { if (playTimer) { clearInterval(playTimer); playTimer = null; } }
+
+// ---- header stats + canvas overlays ----
+function renderDbg() {
+  const t = lastDbg.timing;
+  const tot = t.vote_ms + t.align_weight_ms + t.composite_ms;
+  document.getElementById('timing').innerHTML =
+    `<div style="width:${t.vote_ms / tot * 100}%;background:#6b7fc4" title="vote ${t.vote_ms}ms"></div>
+     <div style="width:${t.align_weight_ms / tot * 100}%;background:#c4a26b" title="align+weight ${t.align_weight_ms}ms"></div>
+     <div style="width:${t.composite_ms / tot * 100}%;background:#7fc46b" title="composite ${t.composite_ms}ms"></div>`;
+  document.getElementById('dstats').textContent =
+    `${tot} ms (vote ${t.vote_ms} / align+w ${t.align_weight_ms} / comp ${t.composite_ms})` +
+    ` · patches: ${lastDbg.n_q} · h*=${lastDbg.h_star} α=${lastDbg.alpha}`;
+  renderStrip();
+  renderDetail();
+  ovAlignImg = null;
+  if (lastDbg.overlay_edge) {
+    const im = new Image();
+    im.onload = () => { ovAlignImg = im; };
+    im.src = 'data:image/png;base64,' + lastDbg.overlay_edge;
+  }
+}
+
+function drawOverlays() {
+  ovc.clearRect(0, 0, 480, 480);
+  if (!drawerOpen || !lastDbg) return;
+  if (document.getElementById('ovCells').checked) {
+    const chg = new Set(lastDbg.cells_changed.map(c => c.join(',')));
+    for (const c of lastDbg.cells_inky) {
+      const [kx, ky] = c;
+      ovc.fillStyle = chg.has(kx + ',' + ky)
+        ? 'rgba(224,163,92,.45)' : 'rgba(107,127,196,.28)';
+      ovc.fillRect(kx * 24 + 38, ky * 24 + 38, 20, 20);
+    }
+  }
+  if (document.getElementById('ovAlign').checked && ovAlignImg) {
+    ovc.imageSmoothingEnabled = true;
+    ovc.drawImage(ovAlignImg, 0, 0, 480, 480);
+  }
+}
+setInterval(drawOverlays, 200);
+</script>
+</body>
+</html>

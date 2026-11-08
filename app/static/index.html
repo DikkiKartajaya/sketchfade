@@ -219,7 +219,7 @@ ink.onpointerup = () => {
 // --- study session ---------------------------------------------------------
 async function loadPackages() {
   const r = await post("/api/packages");
-  const ok = (r.packages || []).filter(m => m.review.status === "approved");
+  const ok = (r.packages || []).filter(m => m.review.status === "approved").reverse();  // newest first
   $("pkg").innerHTML = ok.length
     ? ok.map(m => `<option value="${m.id}">${m.id} ${m.prompt ? "· " + m.prompt : ""}</option>`).join("")
     : `<option value="">no approved package yet</option>`;

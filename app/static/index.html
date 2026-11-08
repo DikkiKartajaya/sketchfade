@@ -155,7 +155,8 @@ function show(s) {
   $("export").classList.toggle("hidden", !test);
   $("task").disabled = !inStudy || probing;
   $("task").value = s.task;
-  $("regen").disabled = !!s.package;
+  $("regen").disabled = !!s.package || probing;
+  $("pin").disabled = probing;
   $("savePkg").disabled = !!s.package || !s.valid;
   // the help panel is for the experimenter; hidden during tests and probes
   $("levelBox").classList.toggle("hidden", test || probing);
@@ -222,6 +223,7 @@ async function loadPackages() {
     ? ok.map(m => `<option value="${m.id}">${m.id} ${m.prompt ? "· " + m.prompt : ""}</option>`).join("")
     : `<option value="">no approved package yet</option>`;
   if (!ok.length) $("prepBox").open = true;  // nothing to study yet: prepare first
+  $("start").disabled = !ok.length;
 }
 $("start").onclick = async () => {
   const r = await post("/api/start", { participant: $("pid").value, group: $("group").value, package: $("pkg").value });
@@ -303,7 +305,8 @@ $("regen").onclick = async () => {
 $("savePkg").onclick = async () => {
   const r = await post("/api/package/save");
   if (r.error) return;
-  $("status").textContent = `saved package ${r.package}: review it, then it appears in Study session`;
+  $("status").textContent = `saved package ${r.package}. Approve it in a terminal: `
+    + `python package.py review ${r.package} --approve --reviewer NAME, then reload this page`;
   loadPackages();
 };
 $("newSketch").onclick = async () => {

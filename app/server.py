@@ -186,6 +186,7 @@ def build_target():
         Image.fromarray((gray * 255).astype(np.uint8)).save(os.path.join(
             HERE, "targets", time.strftime(f"target_%Y%m%d_%H%M%S_seed{k}.png")))
     S.update(k=k, gray=gray, conf=conf, source=source, package=None, layer=0,
+             probe=None,  # a new target ends any running probe
              valid=min(conf.values()) >= ghost.CONF_MIN,
              layers=ghost.build_layers(target, dx, dy, gray, lm))
 
@@ -287,6 +288,10 @@ def start(p):
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,32}", pid):
         return {"error": "participant id: letters, digits, - or _"}
     pkg = p.get("package")
+    if not pkg:
+        return {"error": "no approved package yet: Save package under Prepare "
+                         "targets, then run: python package.py review <id> --approve "
+                         "--reviewer NAME, and reload the page"}
     try:
         layers, meta = package.load(pkg)
     except (OSError, ValueError):

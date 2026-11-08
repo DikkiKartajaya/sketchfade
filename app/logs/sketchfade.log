@@ -16,3 +16,40 @@
 2026-10-30 19:22:20,670 INFO  shadow strokes=0 top=-
 2026-10-30 19:22:20,674 INFO  POST /api/shadow 200 2544ms
 2026-10-30 19:22:26,267 INFO  === SketchFade stop ===
+2026-11-08 19:35:44,230 INFO  === SketchFade start, port 9100 ===
+2026-11-08 19:35:44,334 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-08 19:35:44,334 INFO  target source: ShadowDraw retrieval (pip install diffusers peft for generation)
+2026-11-08 19:35:44,334 INFO  packages: 0 (0 approved)
+2026-11-08 19:35:44,334 INFO  serving on http://127.0.0.1:9100
+2026-11-08 19:35:50,496 INFO  GET / (page loaded)
+2026-11-08 19:35:50,545 INFO  POST /api/packages 200 0ms
+2026-11-08 19:35:50,609 WARNING GET /favicon.ico 404
+2026-11-08 19:39:18,671 INFO  GET / (page loaded)
+2026-11-08 19:39:18,719 INFO  POST /api/packages 200 0ms
+2026-11-08 19:39:43,642 WARNING POST /api/start 200 0ms error=package '' not found
+2026-11-08 19:40:25,706 INFO  pin from 6 strokes, prompt='old man with hat'
+2026-11-08 19:40:25,709 INFO  target retrieval:s_28597: landmark confidence head=0.96 eyes=0.24 nose=0.33 mouth=0.58 -> ok
+2026-11-08 19:40:25,716 INFO  POST /api/pin 200 330ms
+2026-11-08 19:40:34,589 INFO  stroke layer=block-in part=head err=5.8px n=378 level=L3 corrected task=practice
+2026-11-08 19:40:34,597 INFO  POST /api/stroke 200 20ms
+2026-11-08 19:40:37,900 INFO  stroke layer=block-in part=nose err=3.5px n=73 level=L3 corrected task=practice
+2026-11-08 19:40:37,904 INFO  POST /api/stroke 200 7ms
+2026-11-08 19:40:38,952 INFO  probe start layer=block-in
+2026-11-08 19:40:38,956 INFO  POST /api/probe/start 200 4ms
+2026-11-08 19:40:42,860 INFO  target retrieval:s_29294: landmark confidence head=0.78 eyes=0.85 nose=0.19 mouth=0.88 -> LOW
+2026-11-08 19:40:42,863 INFO  target retrieval:s_27643: landmark confidence head=0.81 eyes=0.40 nose=0.69 mouth=0.52 -> ok
+2026-11-08 19:40:42,869 INFO  POST /api/regenerate 200 11ms
+2026-11-08 19:40:54,378 WARNING POST /api/start 200 0ms error=package '' not found
+2026-11-08 19:43:24,663 INFO  === SketchFade stop ===
+2026-11-08 19:43:57,396 INFO  === SketchFade start, port 9100 ===
+2026-11-08 19:43:57,482 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-08 19:43:57,483 INFO  target source: ShadowDraw retrieval (pip install diffusers peft for generation)
+2026-11-08 19:43:57,483 INFO  packages: 0 (0 approved)
+2026-11-08 19:43:57,483 INFO  serving on http://127.0.0.1:9100
+2026-11-08 19:44:03,113 INFO  GET / (page loaded)
+2026-11-08 19:44:03,162 INFO  POST /api/packages 200 0ms
+2026-11-08 19:44:30,769 INFO  GET / (page loaded)
+2026-11-08 19:44:30,833 INFO  POST /api/packages 200 0ms
+2026-11-08 19:44:30,863 WARNING GET /favicon.ico 404
+2026-11-08 19:44:52,769 WARNING POST /api/pin 200 36ms error=draw a rough face first
+2026-11-08 19:44:56,553 WARNING POST /api/pin 200 35ms error=draw a rough face first

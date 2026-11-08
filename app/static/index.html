@@ -145,7 +145,8 @@ function show(s) {
   st = s; lastGhost = s.ghost; setGhost(s.ghost);
   $("ref").src = png(s.ref);
   const inStudy = !!s.participant, test = s.task !== "practice", probing = s.probe !== null;
-  $("layer").textContent = probing ? `probe: ${s.layers[s.probe]}` : `${s.layer + 1}. ${s.layers[s.layer]}`;
+  $("layer").textContent = probing ? `probe: ${s.layers[s.probe]}`
+    : test ? "test drawing" : `${s.layer + 1}. ${s.layers[s.layer]}`;
   $("prev").disabled = probing || test || s.layer === 0;
   $("next").disabled = probing || test;
   $("check").disabled = !s.helped || !s.levels.some(p => p.level === 1);

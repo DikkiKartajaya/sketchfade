@@ -404,6 +404,10 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
+        if self.path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+            return
         if self.path not in ("/", "/index.html"):
             log.warning("GET %s 404", self.path)
             return self._send(404, {"error": "not found"})

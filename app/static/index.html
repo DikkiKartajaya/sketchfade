@@ -6,69 +6,115 @@
 <style>
   body { margin: 0; font-family: "Segoe UI", sans-serif; background: #e8e4da; color: #4a4234;
          display: flex; justify-content: center; gap: 18px; padding: 24px; }
+  #left { display: flex; flex-direction: column; gap: 10px; }
   #board { position: relative; width: 480px; height: 480px; background: #f7f2e7;
            border-radius: 6px; box-shadow: 0 6px 24px rgba(60,50,30,.25); touch-action: none; }
   #board img, #board canvas { position: absolute; inset: 0; width: 480px; height: 480px; }
-  #ui { width: 240px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+  #banner { min-height: 20px; font-weight: 600; color: #8a3b1c; }
+  #refbox { display: flex; gap: 10px; align-items: flex-start; }
+  #ref { width: 160px; height: 160px; background: #fbf8f0; border: 1px solid #c9bfa8; border-radius: 6px; }
+  #ui { width: 270px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
   h1 { font-size: 18px; margin: 0; }
+  fieldset { border: 1px solid #c9bfa8; border-radius: 6px; padding: 8px; display: flex;
+             flex-direction: column; gap: 6px; }
+  legend { font-weight: 600; }
   .row { display: flex; gap: 6px; }
-  button { flex: 1; padding: 7px 4px; border: 1px solid #c9bfa8; border-radius: 6px;
-           background: #fbf8f0; color: inherit; cursor: pointer; }
+  button, select, input[type=text] { padding: 6px 4px; border: 1px solid #c9bfa8; border-radius: 6px;
+           background: #fbf8f0; color: inherit; }
+  button { flex: 1; cursor: pointer; }
   button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: #3b4d8f; color: #fff; border-color: #3b4d8f; }
   .muted { color: #8a8172; font-size: 12px; }
-  label { display: block; }
-  input[type=range] { width: 100%; }
-  .part { margin: 4px 0; }
-  .bar { height: 6px; background: #ddd5c3; border-radius: 3px; }
-  .bar div { height: 100%; background: #3b4d8f; border-radius: 3px; }
+  .part { margin: 3px 0; display: flex; justify-content: space-between; }
+  .lv { font-weight: 600; }
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
-<div id="board">
-  <img id="ghost" alt="">
-  <canvas id="ink" width="480" height="480"></canvas>
+<div id="left">
+  <div id="banner"></div>
+  <div id="board">
+    <img id="ghost" alt="">
+    <canvas id="ink" width="480" height="480"></canvas>
+  </div>
+  <div id="refbox">
+    <img id="ref" alt="side reference">
+    <div class="muted">Side reference: the current construction step.<br>
+      Draw it on the large canvas.</div>
+  </div>
 </div>
 <div id="ui">
   <h1>SketchFade</h1>
   <div id="phase" class="muted"></div>
 
-  <input id="prompt" placeholder="prompt, e.g. old man with a beard"
-         style="padding:6px; border:1px solid #c9bfa8; border-radius:6px">
-  <div class="row">
-    <button id="pin">Generate target</button>
-    <button id="regen" disabled>Regenerate</button>
-  </div>
-  <div class="row">
-    <button id="prev" disabled>&larr;</button>
-    <button id="layer" disabled style="flex:2">&ndash;</button>
-    <button id="next" disabled>&rarr;</button>
-  </div>
-  <div class="row">
-    <button id="check" disabled>Check</button>
-    <button id="clear">Clear</button>
-    <button id="restart">New</button>
-  </div>
-  <label><input type="checkbox" id="test"> Test mode (no help)</label>
-  <label>Pen width: <span id="penVal">3</span> px
-    <input type="range" id="pen" min="1" max="12" value="3"></label>
-  <label>AI help strength: <span id="helpVal">100</span>%
-    <input type="range" id="help" min="0" max="100" value="100"></label>
+  <fieldset id="studyBox">
+    <legend>Study session</legend>
+    <input type="text" id="pid" placeholder="participant id, e.g. P01">
+    <div class="row">
+      <select id="group" style="flex:1"><option>adaptive</option><option>fixed</option></select>
+      <select id="pkg" style="flex:2"></select>
+    </div>
+    <button id="start" class="primary">Start / resume</button>
+    <select id="task" disabled>
+      <option value="practice">practice (with help)</option>
+      <option value="baseline">baseline test</option>
+      <option value="post">immediate post-test</option>
+      <option value="retention">delayed retention test</option>
+      <option value="transfer">unseen portrait transfer</option>
+    </select>
+  </fieldset>
 
-  <div id="skill"></div>
+  <fieldset id="drawBox">
+    <legend>Drawing</legend>
+    <div class="row">
+      <button id="prev" disabled>&larr;</button>
+      <button id="layer" disabled style="flex:2">&ndash;</button>
+      <button id="next" disabled title="ends the layer with an unassisted probe">&rarr;</button>
+    </div>
+    <div class="row">
+      <button id="check" disabled>Check</button>
+      <button id="clear">Clear</button>
+    </div>
+    <button id="probe" disabled>Probe this layer</button>
+    <button id="submit" class="primary hidden">Submit probe</button>
+    <button id="export" class="primary hidden">Finish test drawing</button>
+    <label>Pen width: <span id="penVal">3</span> px
+      <input type="range" id="pen" min="1" max="12" value="3" style="width:100%"></label>
+  </fieldset>
+
+  <fieldset id="levelBox">
+    <legend>Help per part <span class="muted" id="groupLbl"></span></legend>
+    <div id="levels"></div>
+  </fieldset>
+
+  <details id="prepBox">
+    <summary><b>Prepare targets</b> (before recruitment)</summary>
+    <fieldset>
+      <div class="muted">Sketch a rough face, add a prompt, Generate. Save packages
+        that pass the landmark check, then review them with <code>package.py</code>.</div>
+      <input type="text" id="prompt" placeholder="prompt, e.g. old man with a beard">
+      <div class="row">
+        <button id="pin">Generate target</button>
+        <button id="regen" disabled>Regenerate</button>
+      </div>
+      <div id="conf" class="muted"></div>
+      <button id="savePkg" disabled>Save package</button>
+      <button id="newSketch">New sketch</button>
+    </fieldset>
+  </details>
   <div id="status" class="muted"></div>
-  <button id="save">Save session</button>
 </div>
 
 <script>
 const ink = document.getElementById("ink"), ctx = ink.getContext("2d");
-const ghostImg = document.getElementById("ghost");
 const $ = id => document.getElementById(id);
-let phase = "sketch", strokes = [], cur = null, st = null, lastGhost = "";
+const CHECK_MS = 2000;
+let mode = "sketch", strokes = [], cur = null, st = null, lastGhost = "", practice = [];
 
 async function post(url, body = {}) {
   let j;
   try {
-    const r = await fetch(url, { method: "POST", body: JSON.stringify({ ...body, test: $("test").checked }) });
+    const r = await fetch(url, { method: "POST", body: JSON.stringify(body) });
     j = await r.json();
   } catch (err) {
     j = { error: "server unreachable: " + err };
@@ -77,7 +123,8 @@ async function post(url, body = {}) {
   return j;
 }
 
-function setGhost(b64) { ghostImg.src = b64 ? "data:image/png;base64," + b64 : ""; }
+const png = b64 => b64 ? "data:image/png;base64," + b64 : "";
+function setGhost(b64) { $("ghost").src = png(b64); }
 
 function redraw() {
   ctx.clearRect(0, 0, 480, 480);
@@ -90,28 +137,53 @@ function redraw() {
   }
 }
 
+const TEST_NAMES = { baseline: "Baseline test", post: "Immediate post-test",
+                     retention: "Delayed retention test", transfer: "Transfer test" };
+
 function show(s) {
   if (!s || s.error) return;
   st = s; lastGhost = s.ghost; setGhost(s.ghost);
-  $("layer").textContent = `${s.layer + 1}. ${s.layers[s.layer]}`;
-  $("prev").disabled = s.layer === 0;
-  $("next").disabled = s.layer === s.layers.length - 1;
-  $("skill").innerHTML = s.skill.map(p =>
-    `<div class="part"><b>${p.part}</b> <span class="muted">${p.level}</span>
-     <div class="bar"><div style="width:${p.s * 100}%"></div></div></div>`).join("");
-  $("phase").textContent = `Target ${s.target} · draw the ghost layer by layer`;
+  $("ref").src = png(s.ref);
+  const inStudy = !!s.participant, test = s.task !== "practice", probing = s.probe !== null;
+  $("layer").textContent = probing ? `probe: ${s.layers[s.probe]}` : `${s.layer + 1}. ${s.layers[s.layer]}`;
+  $("prev").disabled = probing || test || s.layer === 0;
+  $("next").disabled = probing || test;
+  $("check").disabled = !s.helped || !s.levels.some(p => p.level === 1);
+  $("probe").disabled = probing || test;
+  $("probe").classList.toggle("hidden", probing);
+  $("submit").classList.toggle("hidden", !probing);
+  $("export").classList.toggle("hidden", !test);
+  $("task").disabled = !inStudy || probing;
+  $("task").value = s.task;
+  $("regen").disabled = !!s.package;
+  $("savePkg").disabled = !!s.package || !s.valid;
+  // the help panel is for the experimenter; hidden during tests and probes
+  $("levelBox").classList.toggle("hidden", test || probing);
+  $("groupLbl").textContent = `(${s.group})`;
+  $("levels").innerHTML = s.levels.map(p =>
+    `<div class="part"><span><b>${p.part}</b> <span class="muted">${p.help}</span></span>
+     <span class="lv">L${p.level}<span class="muted"> ${"+".repeat(p.succ)}${"-".repeat(p.fail)}</span></span></div>`).join("");
+  if (s.confidence) {
+    const c = Object.entries(s.confidence).map(([k, v]) => `${k} ${v.toFixed(2)}`).join(" · ");
+    $("conf").textContent = `landmark confidence: ${c} (min ${s.conf_min}) → ${s.valid ? "ok" : "LOW, regenerate"}`;
+  }
+  $("banner").textContent = probing ? "Probe: redraw this step on the blank canvas, without help. Then Submit."
+    : test ? `${TEST_NAMES[s.task]}: draw the portrait without help. Then Finish.` : "";
+  $("phase").textContent = inStudy ? `${s.participant} · ${s.group} · ${s.task} · target ${s.target}`
+                                   : `Preview of target ${s.target} (fixed L3)`;
 }
 
-function setPhase(p) {
-  phase = p;
-  for (const id of ["regen", "check", "prev", "next", "layer"]) $(id).disabled = p === "sketch";
-  if (p === "sketch") {
-    $("phase").textContent = "Sketch a rough face, add a prompt, then Generate";
-    $("layer").innerHTML = "&ndash;";
+function setMode(m) {
+  mode = m;
+  for (const id of ["check", "prev", "next", "layer", "probe"]) $(id).disabled = m === "sketch";
+  if (m === "sketch") {
+    $("phase").textContent = "Start a study session, or open Prepare targets";
+    $("layer").innerHTML = "&ndash;"; $("ref").src = ""; $("banner").textContent = "";
+    $("levelBox").classList.add("hidden");
   }
 }
 
-// rough-sketch phase: one shadow request at a time, newest strokes win
+// rough-sketch phase (prepare targets): one shadow request at a time, newest strokes win
 let busy = false, dirty = false;
 async function updateShadow() {
   if (busy) { dirty = true; return; }
@@ -122,11 +194,11 @@ async function updateShadow() {
 }
 
 async function onStroke(s) {
-  if (phase === "sketch") return updateShadow();
-  const r = await post("/api/stroke", { pts: s.pts, w: s.w, help: helpStrength() });
+  if (mode === "sketch") return updateShadow();
+  const r = await post("/api/stroke", { pts: s.pts, w: s.w });
   if (r.error) return;
   s.pts = r.pts; redraw(); show(r);
-  $("status").textContent = `last stroke: ${r.part}, error ${r.err}px`;
+  $("status").textContent = r.part ? `last stroke: ${r.part}, error ${r.err}px` : "";
 }
 
 const pos = e => { const b = ink.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
@@ -139,53 +211,105 @@ ink.onpointerup = () => {
   strokes.push(s); onStroke(s);
 };
 
-// generating the hidden target takes ~1 s on a GPU, ~1 min on a CPU: block the buttons meanwhile
+// --- study session ---------------------------------------------------------
+async function loadPackages() {
+  const r = await post("/api/packages");
+  const ok = (r.packages || []).filter(m => m.review.status === "approved");
+  $("pkg").innerHTML = ok.length
+    ? ok.map(m => `<option value="${m.id}">${m.id} ${m.prompt ? "· " + m.prompt : ""}</option>`).join("")
+    : `<option value="">no approved package yet</option>`;
+}
+$("start").onclick = async () => {
+  const r = await post("/api/start", { participant: $("pid").value, group: $("group").value, package: $("pkg").value });
+  if (r.error) return;
+  strokes = []; practice = []; redraw(); setMode("draw"); show(r);
+  $("group").value = r.group;  // a returning participant keeps their group
+  $("status").textContent = `session ${r.participant} (${r.group}) on ${r.package}`;
+};
+$("task").onchange = async () => {
+  const r = await post("/api/task", { task: $("task").value });
+  if (r.error) return;
+  strokes = []; practice = []; redraw(); show(r);
+  $("status").textContent = "";
+};
+
+// --- practice: layers, Check, probes -----------------------------------------
+async function startProbe(then) {
+  practice = strokes; strokes = []; redraw();      // blank area for the redraw
+  const r = await post("/api/probe/start");
+  if (r.error) { strokes = practice; redraw(); return; }
+  afterProbe = then; show(r);
+  $("status").textContent = "";
+}
+let afterProbe = null;
+$("probe").onclick = () => startProbe(null);
+$("next").onclick = () => startProbe(st.layer + 1 < st.layers.length ? st.layer + 1 : null);
+$("submit").onclick = async () => {
+  const r = await post("/api/probe/submit", { strokes });
+  if (r.error) return;
+  const moved = r.changes.map(c => `${c.part} L${c.from}→L${c.to}`).join(", ");
+  $("status").textContent = "probe saved" + (moved ? `; help changed: ${moved}` : "");
+  strokes = afterProbe !== null ? [] : practice; practice = []; redraw();
+  if (afterProbe !== null) show(await post("/api/layer", { layer: afterProbe }));
+  else show(r);
+  afterProbe = null;
+};
+$("prev").onclick = async () => { strokes = []; redraw(); show(await post("/api/layer", { layer: st.layer - 1 })); };
+$("layer").onclick = () => {};
+$("check").onclick = async () => {
+  const r = await post("/api/check");
+  if (r.error) return;
+  setGhost(r.ghost);
+  setTimeout(() => setGhost(lastGhost), CHECK_MS);
+};
+$("clear").onclick = async () => {
+  strokes = []; redraw();
+  if (mode === "sketch") updateShadow();
+};
+
+// --- formal tests -------------------------------------------------------------
+$("export").onclick = async () => {
+  if (!strokes.length) return void ($("status").textContent = "nothing drawn yet");
+  const r = await post("/api/export", { strokes });
+  if (r.error) return;
+  strokes = []; redraw();
+  $("status").textContent = `drawing saved (code ${r.code})`;
+};
+
+// --- prepare targets ----------------------------------------------------------
 async function generating(url, body) {
   const btns = [...document.querySelectorAll("button")], was = btns.map(b => b.disabled);
   btns.forEach(b => b.disabled = true);
-  $("status").textContent = "generating hidden target ... (first time also loads the model)";
+  $("status").textContent = "generating and checking the hidden target ...";
   const r = await post(url, body);
   btns.forEach((b, i) => b.disabled = was[i]);
-  if (!r.error) $("status").textContent = "target ready: draw layer by layer";
+  if (!r.error) $("status").textContent = r.valid ? "target ready" : "low landmark confidence: regenerate or change the sketch";
   return r;
 }
 $("pin").onclick = async () => {
   const r = await generating("/api/pin", { strokes, prompt: $("prompt").value });
   if (r.error) return;
-  strokes = []; redraw(); setPhase("draw"); show(r);
+  strokes = []; redraw(); setMode("draw"); show(r);
 };
 $("regen").onclick = async () => {
   const r = await generating("/api/regenerate");
   if (r.error) return;
   strokes = []; redraw(); show(r);
 };
-$("prev").onclick = async () => show(await post("/api/layer", { layer: st.layer - 1 }));
-$("next").onclick = async () => show(await post("/api/layer", { layer: st.layer + 1 }));
-$("test").onchange = async () => { if (st) show(await post("/api/layer", { layer: st.layer })); };
-$("check").onclick = async () => {
-  const r = await post("/api/check");
-  setGhost(r.ghost);
-  setTimeout(() => setGhost(lastGhost), 2000);
+$("savePkg").onclick = async () => {
+  const r = await post("/api/package/save");
+  if (r.error) return;
+  $("status").textContent = `saved package ${r.package}: review it, then it appears in Study session`;
+  loadPackages();
 };
-$("clear").onclick = async () => {
-  strokes = []; redraw();
-  if (phase === "sketch") updateShadow();
-};
-$("restart").onclick = async () => {
-  strokes = []; redraw(); setGhost(""); st = null; setPhase("sketch");
+$("newSketch").onclick = async () => {
+  strokes = []; redraw(); setGhost(""); st = null; setMode("sketch");
   await post("/api/shadow", { strokes });
 };
-// sliders: pen width for new strokes; AI help strength scales the shadow /
-// ghost opacity here and the stroke correction on the server
-const helpStrength = () => $("help").value / 100;
 $("pen").oninput = () => { $("penVal").textContent = $("pen").value; };
-$("help").oninput = () => {
-  $("helpVal").textContent = $("help").value;
-  ghostImg.style.opacity = helpStrength();
-};
-$("save").onclick = async () => { $("status").textContent = "saved " + (await post("/api/save")).file; };
 
-setPhase("sketch");
+setMode("sketch");
+loadPackages();
 </script>
 </body>
 </html>

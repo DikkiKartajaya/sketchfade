@@ -1,0 +1,8 @@
+# runtime study data (keep on the study machine, not in git)
+participants/
+sessions/*.jsonl
+exports/
+targets/
+logs/
+__pycache__/
+.venv/

@@ -166,7 +166,7 @@ class Controller:
         self.level = {p: L3 for p in PARTS}
         self.succ = {p: 0 for p in PARTS}
         self.fail = {p: 0 for p in PARTS}
-        if os.path.exists(path):
+        if path and os.path.exists(path):
             with open(path) as f:
                 saved = json.load(f)
             self.group = saved["group"]  # the assignment never changes

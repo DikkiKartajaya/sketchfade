@@ -3,26 +3,48 @@ ShadowDraw demo engine. Standard library HTTP server + numpy/Pillow.
 
   python server.py [port]      # default 9100
 
-Flow: rough sketch (live ShadowDraw shadow) + prompt -> Generate target
-(hidden; SD + ControlNet + LCM, see generate.py) -> draw layer by layer.
-Every stroke is scored against the hidden target's current layer; the score
-updates the per-part skill, which decides how much help each part gets.
+Two modes, following the final proposal (Lecture 4):
+
+  Prepare (before recruitment): rough sketch + prompt -> Generate target
+    (hidden; SD + ControlNet + LCM) -> landmark confidence check (regenerate
+    when low) -> construction layers -> Save package -> expert review
+    (python package.py review ...). Packages are frozen from then on.
+
+  Study (per participant): Start {participant, group, package} -> tasks
+    practice   help per part from the participant's level (L3..L0); fixed
+               group always L3. Each layer ends with an unassisted probe in
+               a blank area (both groups); the probe decides the level.
+    baseline / post / retention / transfer
+               formal tests: no overlay, correction, Check or feedback;
+               the drawing is exported under a blinded code for the raters.
 
 Endpoints (all POST, JSON, points in 480x480 canvas space):
-  /api/shadow      {strokes}         -> {shadow}        rough-sketch phase
-  /api/pin         {strokes, prompt} -> state           generate the target
-  /api/regenerate  {}                -> state           new seed / next face
-  /api/layer       {layer, test}    -> state
-  /api/stroke      {pts, test}      -> state + {pts, part, err}
-  /api/check       {test}           -> state with check-on-request parts shown
-  /api/save        {}               -> {file}           stroke log for the study
+  /api/shadow        {strokes}                    -> {shadow}
+  /api/pin           {strokes, prompt}            -> state     generate + validate
+  /api/regenerate    {}                           -> state     next seed
+  /api/package/save  {}                           -> {package}
+  /api/packages      {}                           -> {packages}
+  /api/start         {participant, group, package}-> state
+  /api/task          {task}                       -> state
+  /api/layer         {layer}                      -> state
+  /api/stroke        {pts, w}                     -> state + {pts, part, err}
+  /api/check         {}                           -> state     L1 parts shown
+  /api/probe/start   {}                           -> state
+  /api/probe/submit  {strokes}                    -> state + {results, changes}
+  /api/export        {strokes}                    -> {code}
+
+Every event goes to sessions/<participant>.jsonl (timestamped, with participant,
+group, task, target, layer, part and level) and to logs/sketchfade.log.
 """
 
 import base64
+import csv
 import io
 import json
 import logging
 import os
+import re
+import secrets
 import sys
 import threading
 import time
@@ -40,20 +62,27 @@ from engine import CANVAS, ShadowEngine, shift_image  # noqa: E402
 import fading  # noqa: E402
 import generate  # noqa: E402
 import ghost  # noqa: E402
+import package  # noqa: E402
 
 UI = 480
 SCALE = CANVAS / UI
 N_TARGETS = 10  # retrieval fallback: how many faces Regenerate cycles through
+MAX_TRIES = 3  # seeds tried per Generate / Regenerate before giving up
 GEN = generate.available()  # False -> retrieval target (no diffusers installed)
+TASKS = ["practice", "baseline", "post", "retention", "transfer"]
+TEST_REF_LAYER = ghost.LAYERS.index("contours")  # side reference in formal tests
+
+for d in ("logs", "sessions", "participants", "exports"):
+    os.makedirs(os.path.join(HERE, d), exist_ok=True)
 
 lock = threading.Lock()
 engine = None
-skill = fading.Skill(os.path.join(HERE, "skill.json"))
 S = {"cands": [], "k": 0, "sketch": None, "prompt": "", "layers": None,
-     "layer": 0, "log": []}
+     "gray": None, "conf": None, "valid": False, "source": None, "layer": 0,
+     "package": None, "task": "practice", "probe": None,
+     "ctrl": fading.Controller(None, "preview", "fixed")}
 
 # run log for tracing back what happened: console + logs/sketchfade.log
-os.makedirs(os.path.join(HERE, "logs"), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)-5s %(message)s",
     handlers=[logging.StreamHandler(),
@@ -63,16 +92,41 @@ log = logging.getLogger("sketchfade")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # HF download chatter
 
 
-def fmt_skill():
-    return " ".join(f"{p}={s:.2f}" for p, s in skill.s.items())
+# --- helpers -----------------------------------------------------------------
+
+def fmt_levels():
+    return " ".join(f"{p}=L{l}" for p, l in S["ctrl"].level.items())
 
 
-def rasterize(strokes):
-    im = Image.new("L", (CANVAS, CANVAS), 0)
+def target_label():
+    if S["package"]:
+        return S["package"]
+    if S["layers"] is None:
+        return None
+    return f"seed {S['k']}" if GEN else f"db {S['k'] + 1}/{len(S['cands'])}"
+
+
+def event(kind, **fields):
+    """Study logger: one timestamped JSON line per event."""
+    c = S["ctrl"]
+    rec = {"t": round(time.time(), 3), "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+           "event": kind, "participant": c.participant, "group": c.group,
+           "task": S["task"], "target": target_label(),
+           "layer": ghost.LAYERS[S["layer"]] if S["layers"] is not None else None,
+           **fields}
+    name = c.participant if c.path else "_prepare"
+    with open(os.path.join(HERE, "sessions", f"{name}.jsonl"), "a",
+              encoding="utf-8") as f:
+        f.write(json.dumps(rec) + "\n")
+
+
+def rasterize(strokes, size=CANVAS, scale=SCALE, width=2):
+    im = Image.new("L", (size, size), 0)
     dr = ImageDraw.Draw(im)
     for s in strokes:
-        pts = [(x * SCALE, y * SCALE) for x, y in s["pts"]]
-        dr.line(pts * 2 if len(pts) == 1 else pts, fill=255, width=2, joint="curve")
+        pts = [(x * scale, y * scale) for x, y in s["pts"]]
+        w = width if width else max(1, int(s.get("w", 3)))
+        dr.line(pts * 2 if len(pts) == 1 else pts, fill=255, width=w, joint="curve")
     return np.asarray(im) > 128
 
 
@@ -85,83 +139,182 @@ def rgba_png(alpha, rgb):
     return base64.b64encode(buf.getvalue()).decode()
 
 
-def build_target():
-    """B: the hidden target. Generated from the sketch + prompt (seed k); the
-    ShadowDraw match of the sketch only gives the face layout (d). Without a
-    generator, the k-th retrieved database face is used instead."""
-    i, (dx, dy) = S["cands"][0 if GEN else S["k"]]
+def helped():
+    """Help (overlay, correction, Check, feedback) only in practice, not in probes."""
+    return S["task"] == "practice" and S["probe"] is None
+
+
+# --- B: prepare targets --------------------------------------------------------
+
+def try_target(k):
+    """One candidate target for seed / retrieval index k: (gray, edges, d, source)."""
+    i, (dx, dy) = S["cands"][0 if GEN else k % len(S["cands"])]
     if GEN:
-        log.info("generating target: prompt=%r seed=%d ...", S["prompt"], S["k"])
+        log.info("generating target: prompt=%r seed=%d ...", S["prompt"], k)
         t0 = time.time()
-        gray = generate.generate(S["sketch"], S["prompt"], seed=S["k"])
-        target = ghost.image_edges(gray)
+        gray = generate.generate(S["sketch"], S["prompt"], seed=k)
+        log.info("target seed %d generated in %.1fs", k, time.time() - t0)
+        return gray, ghost.image_edges(gray), (dx, dy), "generated"
+    target = shift_image(engine.edge_map(i).astype(np.float32), dx, dy) > 0.5
+    return None, target, (dx, dy), f"retrieval:{engine.names[i]}"
+
+
+def build_target():
+    """B: generate (or retrieve) a hidden target and validate its landmarks.
+    Low confidence -> try the next seed, up to MAX_TRIES; the best attempt is
+    kept but marked invalid, so it cannot be saved as a package."""
+    best = None
+    for attempt in range(MAX_TRIES):
+        gray, target, (dx, dy), source = try_target(S["k"])
+        lm, conf = ghost.find_landmarks(target, dx, dy)
+        ok = min(conf.values()) >= ghost.CONF_MIN
+        log.info("target %s: landmark confidence %s -> %s", source,
+                 " ".join(f"{p}={c:.2f}" for p, c in conf.items()),
+                 "ok" if ok else "LOW")
+        event("target", source=source, seed=S["k"], prompt=S["prompt"],
+              confidence=conf, valid=ok)
+        cand = (min(conf.values()), S["k"], gray, target, dx, dy, lm, conf, source)
+        if best is None or cand[0] > best[0]:
+            best = cand
+        if ok:
+            break
+        if attempt < MAX_TRIES - 1:
+            S["k"] += 1
+    _, k, gray, target, dx, dy, lm, conf, source = best
+    if GEN and gray is not None:
         os.makedirs(os.path.join(HERE, "targets"), exist_ok=True)
-        name = time.strftime(f"target_%Y%m%d_%H%M%S_seed{S['k']}.png")
-        Image.fromarray((gray * 255).astype(np.uint8)).save(
-            os.path.join(HERE, "targets", name))
-        log.info("target seed %d: %.1fs, saved targets/%s, d=(%d, %d), %d edge px",
-                 S["k"], time.time() - t0, name, dx, dy, target.sum())
-    else:
-        gray = None
-        target = shift_image(engine.edge_map(i).astype(np.float32), dx, dy) > 0.5
-        log.info("target %d/%d (retrieval): db image %s, d=(%d, %d), %d edge px",
-                 S["k"] + 1, len(S["cands"]), engine.names[i], dx, dy, target.sum())
-    S["layers"] = ghost.build_layers(target, dx, dy, gray)
-    S["layer"] = 0
+        Image.fromarray((gray * 255).astype(np.uint8)).save(os.path.join(
+            HERE, "targets", time.strftime(f"target_%Y%m%d_%H%M%S_seed{k}.png")))
+    S.update(k=k, gray=gray, conf=conf, source=source, package=None, layer=0,
+             valid=min(conf.values()) >= ghost.CONF_MIN,
+             layers=ghost.build_layers(target, dx, dy, gray, lm))
 
 
-def state(test=False, check=False):
-    levels = skill.levels()
-    g = (np.zeros((CANVAS, CANVAS)) if test
-         else fading.ghost(S["layers"], S["layer"], levels, check))
+# --- state -------------------------------------------------------------------
+
+def state(check=False):
+    c = S["ctrl"]
+    levels = c.levels()
+    on = helped()
+    g = (fading.ghost(S["layers"], S["layer"], levels, check and on) if on
+         else np.zeros((CANVAS, CANVAS)))
+    ref_layer = (S["probe"]["layer"] if S["probe"] else
+                 S["layer"] if S["task"] == "practice" else TEST_REF_LAYER)
+    ref = fading.guide_mask(S["layers"][ref_layer]) > 0
     return {
-        "layer": S["layer"], "layers": ghost.LAYERS,
-        "target": f"seed {S['k']}" if GEN else f"{S['k'] + 1}/{len(S['cands'])}",
-        "skill": [{"part": p, "s": round(skill.s[p], 2),
-                   "level": fading.LEVEL_NAMES[levels[j]]}
-                  for j, p in enumerate(ghost.PARTS)],
-        "ghost": rgba_png(g * 0.7, (70, 95, 170)),
+        "layer": S["layer"], "layers": ghost.LAYERS, "target": target_label(),
+        "package": S["package"], "participant": c.participant if c.path else None,
+        "group": c.group, "task": S["task"], "helped": on,
+        "probe": S["probe"]["layer"] if S["probe"] else None,
+        "confidence": S["conf"], "valid": S["valid"], "conf_min": ghost.CONF_MIN,
+        "levels": [{"part": p, "level": levels[j], "name": fading.LEVEL_NAMES[levels[j]],
+                    "help": fading.LEVEL_HELP[levels[j]], "succ": c.succ[p],
+                    "fail": c.fail[p]} for j, p in enumerate(ghost.PARTS)],
+        "ghost": rgba_png(g, (70, 95, 170)),
+        "ref": rgba_png(ref * 0.9, (60, 60, 70)),
     }
 
 
-def on_stroke(p, test):
-    pts = p["pts"]
-    w = p.get("w", 3)
-    strength = float(np.clip(p.get("help", 1.0), 0, 1))  # AI help slider
+# --- A: practice, probes, tests -------------------------------------------------
+
+def on_stroke(p):
+    pts, w = p["pts"], p.get("w", 3)
     raw = np.array(pts, np.float32) * SCALE
     part, err, nearest = fading.match_stroke(raw, S["layers"][S["layer"]])
-    before = skill.levels()
-    level = before[part]
+    level = S["ctrl"].levels()[part]
     out = raw
-    if not test:
-        if level == fading.SHADOW and strength > 0:
-            out = fading.correct(raw, nearest, fading.PULL * strength)
-        skill.update(part, err)  # measured on the raw stroke, not the corrected one
-    log.info("stroke layer=%s part=%s err=%.1fpx n=%d w=%s aihelp=%.0f%% "
-             "help='%s'%s%s | %s",
-             ghost.LAYERS[S["layer"]], ghost.PARTS[part], err, len(pts), w,
-             strength * 100, fading.LEVEL_NAMES[level],
-             " corrected" if out is not raw else "", " TEST" if test else "",
-             fmt_skill())
-    for p, (a, b) in enumerate(zip(before, skill.levels())):
-        if a != b:
-            log.info("help  %s: '%s' -> '%s'", ghost.PARTS[p],
-                     fading.LEVEL_NAMES[a], fading.LEVEL_NAMES[b])
-    S["log"].append({"t": time.time(), "target": S["k"], "layer": S["layer"],
-                     "part": ghost.PARTS[part], "err": round(err, 2),
-                     "level": level, "test": test, "w": w, "aihelp": strength,
-                     "pts": pts})
-    return {**state(test), "pts": (out / SCALE).round(1).tolist(),
-            "part": ghost.PARTS[part], "err": round(err, 1)}
+    if helped() and level == fading.L3:
+        out = fading.correct(raw, nearest)
+    corrected = out is not raw
+    kind = "probe_stroke" if S["probe"] else "stroke"
+    log.info("%s layer=%s part=%s err=%.1fpx n=%d level=L%d%s task=%s%s",
+             kind, ghost.LAYERS[S["layer"]], ghost.PARTS[part], err, len(pts),
+             level, " corrected" if corrected else "", S["task"],
+             "" if helped() else " (no help)")
+    # raw strokes are kept apart from corrected ones
+    event(kind, part=ghost.PARTS[part], level=level, err_px=round(err, 2),
+          helped=helped(), corrected=corrected, w=w, raw=pts,
+          shown=(out / SCALE).round(1).tolist() if corrected else None)
+    res = {**state(), "pts": (out / SCALE).round(1).tolist()}
+    if helped():  # formal tests and probes give no feedback
+        res.update(part=ghost.PARTS[part], err=round(err, 1))
+    return res
+
+
+def probe_submit(p):
+    layer = S["probe"]["layer"]
+    strokes = p.get("strokes", [])
+    drawn = rasterize(strokes)
+    results = fading.score_probe(drawn, S["layers"][layer])
+    before = S["ctrl"].levels()
+    changes = S["ctrl"].update(results)
+    for part, a, b in changes:
+        log.info("level %s: L%d -> L%d", part, a, b)
+    log.info("probe layer=%s %s | %s", ghost.LAYERS[layer],
+             " ".join(f"{k}:{r['outcome'][0]}(e={r['err']:.3f},c={r['cov']:.2f})"
+                      for k, r in results.items()), fmt_levels())
+    event("probe", probe_layer=ghost.LAYERS[layer], results=results,
+          levels_before=before, levels_after=S["ctrl"].levels(),
+          changes=[{"part": a, "from": b, "to": c} for a, b, c in changes],
+          strokes=[s["pts"] for s in strokes])
+    S["probe"] = None
+    return {**state(), "results": results,
+            "changes": [{"part": a, "from": b, "to": c} for a, b, c in changes]}
+
+
+def export(p):
+    """Formal test drawing -> exports/<code>.png; the key stays in exports/key.csv."""
+    code = secrets.token_hex(4)
+    img = ~rasterize(p.get("strokes", []), UI, 1.0, width=None)
+    Image.fromarray(img.astype(np.uint8) * 255).save(
+        os.path.join(HERE, "exports", f"{code}.png"))
+    key = os.path.join(HERE, "exports", "key.csv")
+    new = not os.path.exists(key)
+    with open(key, "a", newline="") as f:
+        wr = csv.writer(f)
+        if new:
+            wr.writerow(["code", "participant", "group", "task", "target", "time"])
+        wr.writerow([code, S["ctrl"].participant, S["ctrl"].group, S["task"],
+                     target_label(), time.strftime("%Y-%m-%d %H:%M:%S")])
+    event("export", code=code, n_strokes=len(p.get("strokes", [])))
+    log.info("export %s.png task=%s participant=%s", code, S["task"],
+             S["ctrl"].participant)
+    return {"code": code}
+
+
+def start(p):
+    pid = str(p.get("participant", "")).strip()
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,32}", pid):
+        return {"error": "participant id: letters, digits, - or _"}
+    pkg = p.get("package")
+    try:
+        layers, meta = package.load(pkg)
+    except (OSError, ValueError):
+        return {"error": f"package {pkg!r} not found"}
+    if meta["review"]["status"] != "approved":
+        return {"error": f"package {pkg} is not approved (python package.py review)"}
+    path = os.path.join(HERE, "participants", f"{pid}.json")
+    existed = os.path.exists(path)
+    try:
+        ctrl = fading.Controller(path, pid, p.get("group", "adaptive"))
+    except ValueError as e:
+        return {"error": str(e)}
+    S.update(ctrl=ctrl, layers=layers, package=pkg, layer=0, probe=None,
+             task="practice", gray=None, conf=meta.get("confidence"), valid=True)
+    log.info("session %s participant=%s group=%s package=%s | %s",
+             "resumed" if existed else "started", pid, ctrl.group, pkg, fmt_levels())
+    event("session_start", resumed=existed, levels=ctrl.levels())
+    return state()
 
 
 def handle(path, p):
-    test = bool(p.get("test"))
     if path == "/api/shadow":
         S_raw, info = engine.shadow(rasterize(p.get("strokes", [])))
-        log.info("shadow strokes=%d top=%s", len(p.get("strokes", [])),
-                 ", ".join(f"{r['name']}({r['v']:.2f})" for r in info[:3]) or "-")
         return {"shadow": rgba_png(engine.render(S_raw) * 0.8, (90, 80, 70))}
+    if path == "/api/packages":
+        return {"packages": package.list_all()}
+    if path == "/api/start":
+        return start(p)
     if path == "/api/pin":
         S["sketch"] = rasterize(p.get("strokes", []))
         _, info = engine.shadow(S["sketch"])
@@ -170,35 +323,66 @@ def handle(path, p):
         S["cands"] = [(r["img"], r["d"]) for r in info[:N_TARGETS]]
         S["k"] = 0
         S["prompt"] = p.get("prompt", "").strip()
-        log.info("pin from %d strokes | %s", len(p.get("strokes", [])), fmt_skill())
+        S["ctrl"] = fading.Controller(None, "preview", "fixed")
+        S["task"], S["probe"] = "practice", None
+        log.info("pin from %d strokes, prompt=%r", len(p.get("strokes", [])), S["prompt"])
         build_target()
-        return state(test)
+        return state()
     if S["layers"] is None:
-        return {"error": "generate a target first"}
+        return {"error": "generate a target or start a session first"}
     if path == "/api/regenerate":
-        S["k"] = S["k"] + 1 if GEN else (S["k"] + 1) % len(S["cands"])
+        if S["package"]:
+            return {"error": "packages are frozen; generate a new target instead"}
+        S["k"] += 1
         build_target()
-        return state(test)
+        return state()
+    if path == "/api/package/save":
+        if S["package"] or not S["valid"]:
+            return {"error": "only a new target that passed the landmark check"}
+        pid = package.save(S["layers"], S["gray"], {
+            "prompt": S["prompt"], "seed": S["k"], "source": S["source"],
+            "confidence": S["conf"], "generator": "SD1.5+ControlNet+LCM" if GEN
+            else "ShadowDraw retrieval"})
+        log.info("package saved: packages/%s (pending review)", pid)
+        event("package_saved", package=pid)
+        return {"package": pid}
+    if path == "/api/task":
+        task = p.get("task")
+        if task not in TASKS:
+            return {"error": f"task must be one of {TASKS}"}
+        S["task"], S["probe"], S["layer"] = task, None, 0
+        log.info("task %s participant=%s", task, S["ctrl"].participant)
+        event("task", levels=S["ctrl"].levels())
+        return state()
     if path == "/api/layer":
         S["layer"] = int(np.clip(p.get("layer", 0), 0, len(ghost.LAYERS) - 1))
-        log.info("layer %d. %s%s", S["layer"] + 1, ghost.LAYERS[S["layer"]],
-                 " TEST" if test else "")
-        return state(test)
+        log.info("layer %d. %s", S["layer"] + 1, ghost.LAYERS[S["layer"]])
+        event("layer", levels=S["ctrl"].levels())
+        return state()
     if path == "/api/stroke":
-        return on_stroke(p, test)
+        return on_stroke(p)
     if path == "/api/check":
-        shown = [ghost.PARTS[j] for j, l in enumerate(skill.levels())
-                 if l == fading.CHECK]
+        if not helped():
+            return {"error": "Check is off in tests and probes"}
+        shown = [ghost.PARTS[j] for j, l in enumerate(S["ctrl"].levels())
+                 if l == fading.L1]
         log.info("check layer=%s reveals=%s", ghost.LAYERS[S["layer"]],
                  ",".join(shown) or "nothing")
-        return state(test, check=True)
-    if path == "/api/save":
-        os.makedirs(os.path.join(HERE, "sessions"), exist_ok=True)
-        name = time.strftime("session_%Y%m%d_%H%M%S.json")
-        with open(os.path.join(HERE, "sessions", name), "w") as f:
-            json.dump({"skill": skill.s, "log": S["log"]}, f)
-        log.info("saved sessions/%s (%d strokes)", name, len(S["log"]))
-        return {"file": name}
+        event("check", reveals=shown)
+        return state(check=True)
+    if path == "/api/probe/start":
+        if S["task"] != "practice":
+            return {"error": "probes run during practice"}
+        S["probe"] = {"layer": S["layer"], "t0": time.time()}
+        log.info("probe start layer=%s", ghost.LAYERS[S["layer"]])
+        event("probe_start", levels=S["ctrl"].levels())
+        return state()
+    if path == "/api/probe/submit":
+        if S["probe"] is None:
+            return {"error": "no probe running"}
+        return probe_submit(p)
+    if path == "/api/export":
+        return export(p)
     return None
 
 
@@ -237,7 +421,7 @@ class Handler(BaseHTTPRequestHandler):
         ms = (time.time() - t0) * 1000
         if "error" in out:
             log.warning("POST %s %d %.0fms error=%s", self.path, code, ms, out["error"])
-        else:
+        elif self.path != "/api/shadow":
             log.info("POST %s %d %.0fms", self.path, code, ms)
         self._send(code, out)
 
@@ -246,13 +430,14 @@ def main():
     global engine
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 9100
     log.info("=== SketchFade start, port %d ===", port)
-    log.info("skill loaded: %s", fmt_skill())
     t0 = time.time()
     engine = ShadowEngine(os.path.join(DEMO, "data", "face_db.npz"))
     log.info("ShadowDraw engine ready: %d images (%.1fs)", engine.n_images,
              time.time() - t0)
     log.info("target source: %s", f"SD + ControlNet + LCM on {generate.device_name()}"
              if GEN else "ShadowDraw retrieval (pip install diffusers peft for generation)")
+    log.info("packages: %d (%d approved)", len(package.list_all()),
+             sum(m["review"]["status"] == "approved" for m in package.list_all()))
     log.info("serving on http://127.0.0.1:%d", port)
     try:
         ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

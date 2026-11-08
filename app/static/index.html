@@ -38,8 +38,8 @@
     <canvas id="ink" width="480" height="480"></canvas>
   </div>
   <div id="refbox">
-    <img id="ref" alt="side reference">
-    <div class="muted">Side reference: the current construction step.<br>
+    <img id="ref" alt="">
+    <div class="muted" id="refNote">Side reference: the current construction step.<br>
       Draw it on the large canvas.</div>
   </div>
 </div>
@@ -176,8 +176,11 @@ function show(s) {
 function setMode(m) {
   mode = m;
   for (const id of ["check", "prev", "next", "layer", "probe"]) $(id).disabled = m === "sketch";
+  $("refbox").classList.toggle("hidden", m === "sketch");
   if (m === "sketch") {
-    $("phase").textContent = "Start a study session, or open Prepare targets";
+    $("phase").textContent = "Start a study session, or open Prepare targets. "
+      + "The blurred shadow is ShadowDraw's blend of similar faces; the clean "
+      + "construction guides appear after Generate target.";
     $("layer").innerHTML = "&ndash;"; $("ref").src = ""; $("banner").textContent = "";
     $("levelBox").classList.add("hidden");
   }
@@ -218,6 +221,7 @@ async function loadPackages() {
   $("pkg").innerHTML = ok.length
     ? ok.map(m => `<option value="${m.id}">${m.id} ${m.prompt ? "· " + m.prompt : ""}</option>`).join("")
     : `<option value="">no approved package yet</option>`;
+  if (!ok.length) $("prepBox").open = true;  // nothing to study yet: prepare first
 }
 $("start").onclick = async () => {
   const r = await post("/api/start", { participant: $("pid").value, group: $("group").value, package: $("pkg").value });

@@ -1,0 +1,32 @@
+SketchFade patch log
+====================
+
+2026-11-11 · Participant view (app/static/participant.html, app/server.py)
+--------------------------------------------------------------------------
+Added
+  - Warm-up task (stylus practice) as the first Task option. Blank canvas,
+    pen sizes, Undo/Clear, palm rejection. No guide, steps or reference.
+    No server calls: nothing is logged and levels are untouched. Start
+    works for it even when no package is approved.
+  - Returning-participant notice. /api/start returns "resumed" (true when
+    participants/<id>.json already existed). The setup shows "Returning
+    participant ... Group kept: X (you picked Y)" with Continue / Back to
+    setup, and sets the group dropdown to the saved group.
+
+Fixed
+  - Crash when /api/layer failed (connection lost or server error) after a
+    probe or on "Practise again". The page now stays on the current step,
+    keeps the drawing and shows "Connection problem" with Try again, which
+    repeats only the step change, not the probe.
+
+Changed (code)
+  - New helpers in participant.html: goToLayer(), renderWarmup(),
+    showApp(), toSetup(), updateGo(). restartPractice() now uses goToLayer().
+  - server.py start(): returns {**state(), "resumed": existed}. The
+    researcher app (index.html) ignores the extra field.
+
+Tested
+  - Headless Chrome against a test server: 19/19 checks passed (warm-up,
+    returning participant, /api/layer failure + Try again, Practise again
+    failure + retry, new ID, baseline export, no console errors). Test
+    data (zz_test, zz_test2) was removed afterwards.

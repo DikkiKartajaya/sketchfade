@@ -429,7 +429,7 @@ def start(p):
     log.info("session %s participant=%s group=%s package=%s | %s",
              "resumed" if existed else "started", pid, ctrl.group, pkg, fmt_levels())
     event("session_start", resumed=existed, levels=ctrl.levels())
-    return state()
+    return {**state(), "resumed": existed}  # the participant view tells the researcher
 
 
 def handle(path, p):

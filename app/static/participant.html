@@ -93,7 +93,8 @@
   <select id="pkg"></select>
   <label for="taskSel">Task</label>
   <select id="taskSel">
-    <option value="practice">Practice (with help)</option>
+    <option value="warmup">Warm-up (stylus practice, nothing saved)</option>
+    <option value="practice" selected>Practice (with help)</option>
     <option value="baseline">Baseline test</option>
     <option value="post">Immediate post-test</option>
     <option value="retention">Delayed retention test (Day 7)</option>
@@ -159,7 +160,7 @@ const TESTS = { baseline: "Baseline drawing", post: "Drawing check", retention: 
                 transfer: "New portrait" };
 
 let st = null;               // last server state
-let phase = "practice";      // practice | probe | test
+let phase = "practice";      // practice | probe | test | warmup (no server calls)
 let strokes = [], practice = [], byLayer = {}, cur = null;
 let pen = 3, penSeen = false;
 
@@ -218,6 +219,7 @@ ink.onpointerup = ink.onpointercancel = async () => {
   const s = cur; cur = null;
   if (s.pts.length < 2) return redraw();
   strokes.push(s); redraw(); updateButtons();
+  if (phase === "warmup") return;                   // warm-up strokes are not sent or logged
   const r = await post("/api/stroke", { pts: s.pts, w: s.w });
   if (r.error) return note(r.error);
   s.pts = r.pts; st = r; redraw(); paintGuides();   // L3: the stroke may be gently corrected
@@ -230,6 +232,7 @@ function paintGuides() {
   $("ref").src = png(st.ref);
 }
 function render() {
+  if (phase === "warmup") return renderWarmup();
   const names = st.layers, i = st.probe !== null ? st.probe : st.layer;
   const [title, hint] = STEP[names[i]] || [names[i], ""];
   $("steps").innerHTML = phase === "test" ? "" : names.map((_, k) =>
@@ -256,12 +259,25 @@ function render() {
   updateButtons();
   redraw();
 }
+function renderWarmup() {  // stylus practice: blank canvas, no guide, no steps
+  $("steps").innerHTML = "";
+  $("stepName").textContent = "Warm-up";
+  $("task").textContent = "Try the pen";
+  $("hint").textContent = "Draw lines, circles, anything you like, to get used to the pen and the tablet. "
+    + "Try the pen sizes, Undo and Clear. Nothing here is saved.";
+  $("main").textContent = "I'm done practising";
+  $("main").className = "";
+  $("refCard").classList.add("hidden");
+  $("ghost").removeAttribute("src");
+  updateButtons();
+  redraw();
+}
 function updateButtons() {
   const anyL1 = st && st.helped && st.levels.some(p => p.level === 1);
   $("check").classList.toggle("hidden", !(phase === "practice" && anyL1));
   $("undo").disabled = !strokes.length;
   $("clear").disabled = !strokes.length;
-  $("main").disabled = phase !== "practice" && !strokes.length;
+  $("main").disabled = phase !== "practice" && phase !== "warmup" && !strokes.length;
 }
 $("pens").innerHTML = PENS.map(w =>
   `<button class="pen${w === pen ? " on" : ""}" data-w="${w}"><i style="width:${w * 3}px;height:${w * 3}px"></i></button>`).join("");
@@ -300,6 +316,9 @@ $("main").onclick = async () => {
           [["OK, start", startProbe]]);
   } else if (phase === "probe") {
     await submitProbe();
+  } else if (phase === "warmup") {
+    cover("Warm-up done", "Please hand the tablet back to the researcher.",
+          [["OK", toSetup]]);
   } else {
     await finishTest();
   }
@@ -324,14 +343,10 @@ async function submitProbe() {
   const msg = [less.length ? `Well done: you get less help with ${less.join(", ")} from now on.` : "",
                more.length ? `Help with ${more.join(", ")} is back for a while.` : ""].join(" ").trim();
   const next = st.layer + 1;
+  byLayer[st.layer] = strokes;
   if (next < st.layers.length) {
-    byLayer[st.layer] = strokes;
-    strokes = byLayer[next] || [];
-    st = await post("/api/layer", { layer: next });
-    render();
-    note(msg || "Saved. On to the next step.");
+    await goToLayer(next, msg || "Saved. On to the next step.");
   } else {
-    byLayer[st.layer] = strokes;
     render();
     cover("All steps done",
           (msg ? msg + " " : "") + "You finished every step of this portrait. You can practise it once more from the start.",
@@ -339,11 +354,23 @@ async function submitProbe() {
   }
 }
 
-async function restartPractice() {
-  byLayer = {}; strokes = []; practice = [];
-  st = await post("/api/layer", { layer: 0 });
-  phase = "practice"; render(); note("");
+// Move to a step. If the server can't be reached, stay on the current step
+// (drawing kept) and offer Try again, which repeats only this move, not the probe.
+async function goToLayer(next, msg, restart = false) {
+  busy(true);
+  const r = await post("/api/layer", { layer: next });
+  busy(false);
+  if (r.error) {
+    render();
+    return cover("Connection problem", r.error + " Your drawing is kept.",
+                 [["Try again", () => goToLayer(next, msg, restart)]]);
+  }
+  if (restart) { byLayer = {}; practice = []; }
+  st = r; strokes = byLayer[next] || [];
+  render(); note(msg);
 }
+
+function restartPractice() { return goToLayer(0, "", true); }
 
 async function finishTest() {
   busy(true);
@@ -352,39 +379,70 @@ async function finishTest() {
   if (r.error) return note(r.error);
   strokes = []; redraw();
   cover("Thank you", "Your drawing is saved. Please hand the tablet back to the researcher.",
-        [["OK", () => { $("app").classList.add("hidden"); $("setup").classList.remove("hidden"); }]]);
+        [["OK", toSetup]]);
 }
 
 // --- researcher setup ---------------------------------------------------------
+let hasPackage = false;
 async function loadPackages() {
   const r = await post("/api/packages");
   const ok = (r.packages || []).filter(m => m.review.status === "approved").reverse();
   $("pkg").innerHTML = ok.length
     ? ok.map(m => `<option value="${m.id}">${m.prompt || m.id} (${m.id})</option>`).join("")
     : `<option value="">No approved portrait yet: prepare one in the researcher app</option>`;
-  $("go").disabled = !ok.length;
+  hasPackage = ok.length > 0;
+  updateGo();
 }
+function updateGo() {  // the warm-up needs no package
+  $("go").disabled = !hasPackage && $("taskSel").value !== "warmup";
+}
+$("taskSel").onchange = updateGo;
+
+function showApp() {
+  $("setup").classList.add("hidden"); $("app").classList.remove("hidden");
+  layout(); render(); note("");
+}
+function toSetup() {
+  $("app").classList.add("hidden"); $("setup").classList.remove("hidden"); loadPackages();
+}
+
 $("go").onclick = async () => {
   $("setupMsg").textContent = "";
-  let r = await post("/api/start", { participant: $("pid").value, group: $("group").value,
+  byLayer = {}; strokes = []; practice = [];
+  if ($("taskSel").value === "warmup") {  // stylus practice: no session, nothing logged
+    st = null; phase = "warmup"; showApp();
+    return;
+  }
+  const picked = $("group").value;
+  let r = await post("/api/start", { participant: $("pid").value, group: picked,
                                     package: $("pkg").value });
   if (r.error) return void ($("setupMsg").textContent = r.error);
+  const resumed = r.resumed;  // only /api/start says whether the participant existed
   if ($("taskSel").value !== "practice") {
     r = await post("/api/task", { task: $("taskSel").value });
     if (r.error) return void ($("setupMsg").textContent = r.error);
   }
-  st = r; byLayer = {}; strokes = []; practice = [];
+  st = r;
   phase = st.task === "practice" ? "practice" : "test";
-  $("setup").classList.add("hidden"); $("app").classList.remove("hidden");
-  layout(); render(); note("");
-  if (phase === "practice")
-    cover("Let's draw a portrait", "You will build the face step by step, from big shapes to details. "
-          + "A faint guide helps you; it fades as you improve. After each step you redraw it once on your own.",
-          [["Start", null]]);
+  $("group").value = st.group;  // a returning participant keeps their first group
+  showApp();
+  const intro = () => {
+    if (phase === "practice")
+      cover("Let's draw a portrait", "You will build the face step by step, from big shapes to details. "
+            + "A faint guide helps you; it fades as you improve. After each step you redraw it once on your own.",
+            [["Start", null]]);
+  };
+  if (!resumed) return intro();
+  const kept = picked !== st.group
+    ? `Group kept: ${st.group} (you picked ${picked}; the first assignment never changes).`
+    : `Group: ${st.group}.`;
+  cover("Returning participant", `${st.participant} has a session from before. ${kept} `
+        + "Their help levels carry over. Press Continue, then hand the tablet over.",
+        [["Continue", intro], ["Back to setup", toSetup, true]]);
 };
 $("gear").onclick = () => {
   if (!confirm("Return to the researcher setup? The current drawing on screen will be cleared.")) return;
-  $("app").classList.add("hidden"); $("setup").classList.remove("hidden"); loadPackages();
+  toSetup();
 };
 
 loadPackages();

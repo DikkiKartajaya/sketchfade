@@ -105,6 +105,34 @@ each is drawn at the part's help level above (so L1/L0 parts stay hidden).
 Moving to a layer shows it; L3 correction only pulls toward the current layer
 while it is shown. Every change is logged (`visible` event).
 
+**Earlier layers stay on the canvas.** The practice drawing is kept per layer
+and builds up like a construction drawing: after a layer's probe the user's
+strokes of the earlier layers stay visible (lighter) under the next layer, and
+← returns to a layer with its strokes. Clear only clears the current layer.
+Probes and formal tests still start from a blank canvas.
+
+**Participant view (`/participant`).** A simplified page for the tablet on the
+same server, session and logs (`static/participant.html`). The researcher fills a
+setup screen once (participant ID, group, approved package, task) and hands the
+tablet over. The participant then sees a large canvas, a step bar (Step 2 of 5),
+one plain-language instruction per construction step and one main button
+(*Done with this step*), which starts the unassisted probe (*Now on your own*,
+empty page with the small reference) and then moves on with the earlier steps
+kept under the canvas. Undo (canvas only; the log keeps every stroke), Clear,
+three pen sizes and *Show me* (Check, only when a part is at L1). Formal tests
+show no steps and no guide, and *I'm finished* exports the drawing. Levels,
+groups, packages and logs are not shown; the gear (⚙) returns to the setup.
+Once a stylus is used, touch input is ignored (palm rejection).
+
+**Candidate targets.** Generate and Regenerate make `N_CHOICES` (4) hidden
+targets from one sketch (seeds k … k+3), like ShadowDraw's candidates and the
+four guidance sketches of Chen et al. 2025. The *Candidates* panel shows each as
+a line drawing (contours over a faint block-in, never the generated image) with
+its landmark confidence; the best valid one is preselected and the user can pick
+another (`/api/choose`, logged as `choose`). Only a candidate that passed the
+landmark check can be saved as a package. About 4 s per candidate on an RTX 5090
+laptop GPU, so a Generate takes ~15 s (on a CPU, about 10 s per candidate).
+
 In probes and tests the panel is replaced by the **side reference**, which
 shows the step to draw; it is the drawing prompt, not an overlay.
 

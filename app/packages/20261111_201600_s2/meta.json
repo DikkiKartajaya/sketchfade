@@ -1,0 +1,21 @@
+{
+ "prompt": "kid with t shirt",
+ "style": "anime",
+ "seed": 2,
+ "source": "generated",
+ "confidence": {
+  "head": 0.819,
+  "eyes": 0.677,
+  "nose": 0.41,
+  "mouth": 0.644
+ },
+ "generator": "SD1.5+ControlNet+LCM",
+ "id": "20261111_201600_s2",
+ "created": "2026-11-11 20:16:00",
+ "review": {
+  "status": "approved",
+  "reviewer": "Arif",
+  "note": "",
+  "time": "2026-11-11 20:16:26"
+ }
+}

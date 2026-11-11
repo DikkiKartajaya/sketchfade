@@ -1110,3 +1110,484 @@
 2026-11-11 17:17:41,615 INFO  POST /api/visible 200 27ms
 2026-11-11 17:17:42,560 INFO  visible layers: placement,construction,form,tone,details
 2026-11-11 17:17:42,590 INFO  POST /api/visible 200 29ms
+2026-11-11 19:48:24,694 INFO  === SketchFade start, port 9100 ===
+2026-11-11 19:48:24,782 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 19:48:24,923 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5090 Laptop GPU (24 GB)
+2026-11-11 19:48:24,924 INFO  packages: 0 (0 approved)
+2026-11-11 19:48:24,925 INFO  serving on http://127.0.0.1:9100
+2026-11-11 19:48:30,323 INFO  GET / (page loaded)
+2026-11-11 19:48:30,384 INFO  POST /api/packages 200 0ms
+2026-11-11 19:48:54,574 WARNING POST /api/pin 200 11ms error=draw a rough face first
+2026-11-11 19:49:26,102 INFO  pin from 8 strokes, prompt='kid with hat' style=anime
+2026-11-11 19:49:26,104 INFO  generating target: prompt='kid with hat' style=anime seed=0 ...
+2026-11-11 19:49:29,287 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 19:49:29,468 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 19:49:29,469 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 19:49:30,254 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 19:49:30,439 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 19:49:31,039 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 19:49:31,220 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 19:49:37,143 INFO  target seed 0 generated in 11.0s
+2026-11-11 19:49:39,887 INFO  candidate generated seed 0: landmark confidence head=0.65 eyes=0.84 nose=0.16 mouth=0.90 -> LOW
+2026-11-11 19:49:39,893 INFO  generating target: prompt='kid with hat' style=anime seed=1 ...
+2026-11-11 19:49:40,594 INFO  target seed 1 generated in 0.7s
+2026-11-11 19:49:40,877 INFO  candidate generated seed 1: landmark confidence head=0.91 eyes=0.87 nose=0.41 mouth=0.97 -> ok
+2026-11-11 19:49:40,881 INFO  generating target: prompt='kid with hat' style=anime seed=2 ...
+2026-11-11 19:49:42,034 INFO  target seed 2 generated in 1.2s
+2026-11-11 19:49:42,420 INFO  candidate generated seed 2: landmark confidence head=0.81 eyes=0.74 nose=0.19 mouth=0.86 -> LOW
+2026-11-11 19:49:42,424 INFO  generating target: prompt='kid with hat' style=anime seed=3 ...
+2026-11-11 19:49:44,795 INFO  target seed 3 generated in 2.4s
+2026-11-11 19:49:45,135 INFO  candidate generated seed 3: landmark confidence head=0.62 eyes=0.83 nose=0.29 mouth=0.91 -> ok
+2026-11-11 19:49:45,139 INFO  candidate 2/4 chosen (best, automatic): seed 1
+2026-11-11 19:49:45,184 INFO  POST /api/pin 200 22918ms
+2026-11-11 19:49:49,522 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 19:49:49,566 INFO  POST /api/choose 200 44ms
+2026-11-11 19:49:52,019 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 19:49:52,064 INFO  POST /api/choose 200 45ms
+2026-11-11 19:49:53,089 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 19:49:53,131 INFO  POST /api/choose 200 42ms
+2026-11-11 19:50:06,259 INFO  candidate 2/4 chosen by the user: seed 1
+2026-11-11 19:50:06,310 INFO  POST /api/choose 200 51ms
+2026-11-11 19:50:06,993 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 19:50:07,048 INFO  POST /api/choose 200 54ms
+2026-11-11 19:50:08,833 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 19:50:08,882 INFO  POST /api/choose 200 48ms
+2026-11-11 19:50:09,785 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 19:50:09,834 INFO  POST /api/choose 200 49ms
+2026-11-11 19:50:13,506 INFO  visible layers: block-in,skeleton
+2026-11-11 19:50:13,552 INFO  POST /api/visible 200 46ms
+2026-11-11 19:50:14,601 INFO  visible layers: block-in
+2026-11-11 19:50:14,642 INFO  POST /api/visible 200 41ms
+2026-11-11 19:50:15,562 INFO  visible layers: block-in,contours
+2026-11-11 19:50:15,606 INFO  POST /api/visible 200 45ms
+2026-11-11 19:50:16,979 INFO  visible layers: block-in
+2026-11-11 19:50:17,025 INFO  POST /api/visible 200 47ms
+2026-11-11 19:50:18,313 INFO  visible layers: block-in,shading
+2026-11-11 19:50:18,354 INFO  POST /api/visible 200 41ms
+2026-11-11 19:50:19,137 INFO  visible layers: block-in
+2026-11-11 19:50:19,177 INFO  POST /api/visible 200 40ms
+2026-11-11 19:50:19,994 INFO  visible layers: block-in,shadow
+2026-11-11 19:50:20,043 INFO  POST /api/visible 200 49ms
+2026-11-11 19:50:20,802 INFO  visible layers: block-in
+2026-11-11 19:50:20,847 INFO  POST /api/visible 200 45ms
+2026-11-11 19:50:22,177 INFO  visible layers: block-in,skeleton
+2026-11-11 19:50:22,222 INFO  POST /api/visible 200 45ms
+2026-11-11 19:50:22,857 INFO  visible layers: block-in,skeleton,contours
+2026-11-11 19:50:22,907 INFO  POST /api/visible 200 50ms
+2026-11-11 19:50:24,062 INFO  visible layers: block-in,skeleton,contours,shading
+2026-11-11 19:50:24,107 INFO  POST /api/visible 200 45ms
+2026-11-11 19:50:25,033 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 19:50:25,098 INFO  POST /api/visible 200 65ms
+2026-11-11 19:50:37,458 INFO  visible layers: block-in,contours,shading,shadow
+2026-11-11 19:50:37,522 INFO  POST /api/visible 200 64ms
+2026-11-11 19:50:38,369 INFO  visible layers: block-in,shading,shadow
+2026-11-11 19:50:38,415 INFO  POST /api/visible 200 46ms
+2026-11-11 19:50:39,129 INFO  visible layers: block-in,shadow
+2026-11-11 19:50:39,180 INFO  POST /api/visible 200 51ms
+2026-11-11 19:50:41,235 INFO  visible layers: block-in
+2026-11-11 19:50:41,284 INFO  POST /api/visible 200 50ms
+2026-11-11 19:50:50,913 INFO  stroke layer=block-in part=head err=2.0px n=451 level=L3 corrected task=practice
+2026-11-11 19:50:50,952 INFO  POST /api/stroke 200 63ms
+2026-11-11 19:50:56,548 INFO  stroke layer=block-in part=head err=2.5px n=115 level=L3 corrected task=practice
+2026-11-11 19:50:56,594 INFO  POST /api/stroke 200 55ms
+2026-11-11 19:51:03,609 INFO  stroke layer=block-in part=eyes err=1.3px n=108 level=L3 corrected task=practice
+2026-11-11 19:51:03,647 INFO  POST /api/stroke 200 46ms
+2026-11-11 19:51:06,041 INFO  stroke layer=block-in part=eyes err=0.6px n=98 level=L3 corrected task=practice
+2026-11-11 19:51:06,087 INFO  POST /api/stroke 200 54ms
+2026-11-11 19:51:10,737 INFO  stroke layer=block-in part=nose err=1.3px n=189 level=L3 corrected task=practice
+2026-11-11 19:51:10,773 INFO  POST /api/stroke 200 51ms
+2026-11-11 19:51:17,395 INFO  stroke layer=block-in part=mouth err=1.5px n=145 level=L3 corrected task=practice
+2026-11-11 19:51:17,441 INFO  POST /api/stroke 200 58ms
+2026-11-11 19:51:25,398 INFO  stroke layer=block-in part=head err=4.5px n=636 level=L3 corrected task=practice
+2026-11-11 19:51:25,439 INFO  POST /api/stroke 200 77ms
+2026-11-11 19:51:34,386 INFO  stroke layer=block-in part=neck err=2.4px n=608 level=L3 corrected task=practice
+2026-11-11 19:51:34,422 INFO  POST /api/stroke 200 69ms
+2026-11-11 19:51:37,426 INFO  probe start layer=block-in
+2026-11-11 19:51:37,460 INFO  POST /api/probe/start 200 33ms
+2026-11-11 19:51:40,691 INFO  probe layer=block-in head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) mouth:f(e=0.100,c=0.00) neck:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3 neck=L3
+2026-11-11 19:51:40,734 INFO  POST /api/probe/submit 200 44ms
+2026-11-11 19:51:42,793 INFO  candidate 2/4 chosen by the user: seed 1
+2026-11-11 19:51:42,836 INFO  POST /api/choose 200 43ms
+2026-11-11 19:51:43,801 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 19:51:43,842 INFO  POST /api/choose 200 41ms
+2026-11-11 19:51:46,770 INFO  probe start layer=block-in
+2026-11-11 19:51:46,805 INFO  POST /api/probe/start 200 36ms
+2026-11-11 19:52:24,835 INFO  probe layer=block-in head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) mouth:f(e=0.100,c=0.00) neck:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3 neck=L3
+2026-11-11 19:52:24,880 INFO  POST /api/probe/submit 200 47ms
+2026-11-11 19:52:24,886 INFO  layer 2. skeleton
+2026-11-11 19:52:24,925 INFO  POST /api/layer 200 39ms
+2026-11-11 19:52:29,953 WARNING POST /api/pin 200 231ms error=draw a rough face first
+2026-11-11 19:52:32,464 WARNING POST /api/pin 200 245ms error=draw a rough face first
+2026-11-11 19:52:33,138 INFO  generating target: prompt='kid with hat' style=anime seed=4 ...
+2026-11-11 19:52:34,084 INFO  target seed 4 generated in 0.9s
+2026-11-11 19:52:34,396 INFO  candidate generated seed 4: landmark confidence head=0.64 eyes=0.96 nose=0.29 mouth=0.78 -> ok
+2026-11-11 19:52:34,401 INFO  generating target: prompt='kid with hat' style=anime seed=5 ...
+2026-11-11 19:52:35,103 INFO  target seed 5 generated in 0.7s
+2026-11-11 19:52:35,117 INFO  candidate generated seed 5: landmark confidence head=0.00 eyes=0.00 nose=0.00 mouth=0.00 -> NO FACE
+2026-11-11 19:52:35,119 INFO  generating target: prompt='kid with hat' style=anime seed=6 ...
+2026-11-11 19:52:37,364 INFO  target seed 6 generated in 2.2s
+2026-11-11 19:52:37,779 INFO  candidate generated seed 6: landmark confidence head=0.74 eyes=0.73 nose=0.27 mouth=0.80 -> ok
+2026-11-11 19:52:37,783 INFO  generating target: prompt='kid with hat' style=anime seed=7 ...
+2026-11-11 19:52:39,730 INFO  target seed 7 generated in 1.9s
+2026-11-11 19:52:39,733 INFO  candidate generated seed 7: landmark confidence head=0.00 eyes=0.00 nose=0.00 mouth=0.00 -> NO FACE
+2026-11-11 19:52:39,735 INFO  candidate 1/2 chosen (best, automatic): seed 4
+2026-11-11 19:52:39,793 INFO  POST /api/regenerate 200 6655ms
+2026-11-11 19:53:02,712 INFO  GET / (page loaded)
+2026-11-11 19:53:02,751 INFO  POST /api/packages 200 0ms
+2026-11-11 19:53:15,427 WARNING POST /api/pin 200 240ms error=draw a rough face first
+2026-11-11 19:53:56,661 INFO  pin from 7 strokes, prompt='man bring umbrella' style=realistic
+2026-11-11 19:53:56,662 INFO  generating target: prompt='man bring umbrella' style=realistic seed=0 ...
+2026-11-11 19:53:58,840 INFO  target seed 0 generated in 2.2s
+2026-11-11 19:53:59,192 INFO  candidate generated seed 0: landmark confidence head=0.54 eyes=0.76 nose=0.33 mouth=0.78 -> ok
+2026-11-11 19:53:59,198 INFO  generating target: prompt='man bring umbrella' style=realistic seed=1 ...
+2026-11-11 19:54:01,065 INFO  target seed 1 generated in 1.9s
+2026-11-11 19:54:01,372 INFO  candidate generated seed 1: landmark confidence head=0.56 eyes=0.96 nose=0.40 mouth=0.93 -> ok
+2026-11-11 19:54:01,377 INFO  generating target: prompt='man bring umbrella' style=realistic seed=2 ...
+2026-11-11 19:54:03,362 INFO  target seed 2 generated in 2.0s
+2026-11-11 19:54:03,692 INFO  candidate generated seed 2: landmark confidence head=0.33 eyes=0.84 nose=0.40 mouth=0.93 -> ok
+2026-11-11 19:54:03,696 INFO  generating target: prompt='man bring umbrella' style=realistic seed=3 ...
+2026-11-11 19:54:05,955 INFO  target seed 3 generated in 2.3s
+2026-11-11 19:54:06,284 INFO  candidate generated seed 3: landmark confidence head=0.43 eyes=0.57 nose=0.25 mouth=0.76 -> ok
+2026-11-11 19:54:06,289 INFO  candidate 2/4 chosen (best, automatic): seed 1
+2026-11-11 19:54:06,324 INFO  POST /api/pin 200 14055ms
+2026-11-11 19:54:12,610 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 19:54:12,649 INFO  POST /api/choose 200 39ms
+2026-11-11 19:54:14,178 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 19:54:14,221 INFO  POST /api/choose 200 43ms
+2026-11-11 19:54:16,332 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 19:54:16,366 INFO  POST /api/choose 200 34ms
+2026-11-11 19:54:18,953 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 19:54:18,996 INFO  POST /api/choose 200 42ms
+2026-11-11 19:54:23,530 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 19:54:23,572 INFO  POST /api/choose 200 42ms
+2026-11-11 19:54:28,921 INFO  visible layers: block-in,contours
+2026-11-11 19:54:28,972 INFO  POST /api/visible 200 51ms
+2026-11-11 19:54:33,673 INFO  visible layers: block-in,contours,shadow
+2026-11-11 19:54:33,718 INFO  POST /api/visible 200 45ms
+2026-11-11 19:54:35,386 INFO  visible layers: block-in,contours,shading,shadow
+2026-11-11 19:54:35,445 INFO  POST /api/visible 200 59ms
+2026-11-11 19:54:36,941 INFO  visible layers: block-in,contours,shadow
+2026-11-11 19:54:36,990 INFO  POST /api/visible 200 49ms
+2026-11-11 19:54:37,881 INFO  visible layers: block-in,contours
+2026-11-11 19:54:37,931 INFO  POST /api/visible 200 50ms
+2026-11-11 19:54:49,898 INFO  visible layers: block-in
+2026-11-11 19:54:49,941 INFO  POST /api/visible 200 44ms
+2026-11-11 19:54:59,100 INFO  stroke layer=block-in part=eyes err=1.9px n=139 level=L3 corrected task=practice
+2026-11-11 19:54:59,142 INFO  POST /api/stroke 200 53ms
+2026-11-11 19:55:02,677 INFO  stroke layer=block-in part=eyes err=1.1px n=126 level=L3 corrected task=practice
+2026-11-11 19:55:02,717 INFO  POST /api/stroke 200 51ms
+2026-11-11 19:55:07,922 INFO  stroke layer=block-in part=nose err=0.5px n=212 level=L3 corrected task=practice
+2026-11-11 19:55:07,963 INFO  POST /api/stroke 200 54ms
+2026-11-11 19:55:14,776 INFO  stroke layer=block-in part=mouth err=0.8px n=196 level=L3 corrected task=practice
+2026-11-11 19:55:14,819 INFO  POST /api/stroke 200 57ms
+2026-11-11 19:55:24,815 INFO  stroke layer=block-in part=head err=1.4px n=722 level=L3 corrected task=practice
+2026-11-11 19:55:24,855 INFO  POST /api/stroke 200 78ms
+2026-11-11 19:55:28,393 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 19:55:28,441 INFO  POST /api/choose 200 48ms
+2026-11-11 19:55:29,665 INFO  candidate 2/4 chosen by the user: seed 1
+2026-11-11 19:55:29,709 INFO  POST /api/choose 200 44ms
+2026-11-11 19:55:30,961 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 19:55:31,010 INFO  POST /api/choose 200 50ms
+2026-11-11 19:55:32,690 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 19:55:32,734 INFO  POST /api/choose 200 45ms
+2026-11-11 19:55:33,673 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 19:55:33,713 INFO  POST /api/choose 200 40ms
+2026-11-11 19:55:42,034 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 19:55:42,078 INFO  POST /api/choose 200 44ms
+2026-11-11 19:55:42,960 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 19:55:43,000 INFO  POST /api/choose 200 39ms
+2026-11-11 19:55:44,697 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 19:55:44,745 INFO  POST /api/choose 200 48ms
+2026-11-11 19:56:08,729 INFO  candidate 2/4 chosen by the user: seed 1
+2026-11-11 19:56:08,791 INFO  POST /api/choose 200 62ms
+2026-11-11 19:56:09,457 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 19:56:09,500 INFO  POST /api/choose 200 43ms
+2026-11-11 19:56:10,906 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 19:56:10,945 INFO  POST /api/choose 200 40ms
+2026-11-11 19:56:12,617 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 19:56:12,669 INFO  POST /api/choose 200 52ms
+2026-11-11 19:56:13,770 INFO  candidate 2/4 chosen by the user: seed 1
+2026-11-11 19:56:13,811 INFO  POST /api/choose 200 42ms
+2026-11-11 19:56:16,666 INFO  generating target: prompt='man bring umbrella' style=realistic seed=4 ...
+2026-11-11 19:56:17,589 INFO  target seed 4 generated in 0.9s
+2026-11-11 19:56:17,872 INFO  candidate generated seed 4: landmark confidence head=0.53 eyes=0.67 nose=0.43 mouth=0.91 -> ok
+2026-11-11 19:56:17,878 INFO  generating target: prompt='man bring umbrella' style=realistic seed=5 ...
+2026-11-11 19:56:18,703 INFO  target seed 5 generated in 0.8s
+2026-11-11 19:56:18,966 INFO  candidate generated seed 5: landmark confidence head=0.53 eyes=0.74 nose=0.39 mouth=0.83 -> ok
+2026-11-11 19:56:18,971 INFO  generating target: prompt='man bring umbrella' style=realistic seed=6 ...
+2026-11-11 19:56:22,004 INFO  target seed 6 generated in 3.0s
+2026-11-11 19:56:22,321 INFO  candidate generated seed 6: landmark confidence head=0.78 eyes=0.95 nose=0.25 mouth=0.92 -> ok
+2026-11-11 19:56:22,327 INFO  generating target: prompt='man bring umbrella' style=realistic seed=7 ...
+2026-11-11 19:56:24,205 INFO  target seed 7 generated in 1.9s
+2026-11-11 19:56:24,545 INFO  candidate generated seed 7: landmark confidence head=0.42 eyes=0.78 nose=0.49 mouth=0.91 -> ok
+2026-11-11 19:56:24,550 INFO  candidate 1/4 chosen (best, automatic): seed 4
+2026-11-11 19:56:24,588 INFO  POST /api/regenerate 200 7922ms
+2026-11-11 19:56:28,670 INFO  candidate 2/4 chosen by the user: seed 5
+2026-11-11 19:56:28,719 INFO  POST /api/choose 200 49ms
+2026-11-11 19:56:29,185 INFO  candidate 4/4 chosen by the user: seed 7
+2026-11-11 19:56:29,230 INFO  POST /api/choose 200 45ms
+2026-11-11 19:56:30,481 INFO  candidate 3/4 chosen by the user: seed 6
+2026-11-11 19:56:30,530 INFO  POST /api/choose 200 49ms
+2026-11-11 19:56:31,273 INFO  candidate 1/4 chosen by the user: seed 4
+2026-11-11 19:56:31,320 INFO  POST /api/choose 200 47ms
+2026-11-11 19:56:45,823 WARNING POST /api/pin 200 658ms error=draw a rough face first
+2026-11-11 19:56:47,674 INFO  generating target: prompt='man bring umbrella' style=realistic seed=8 ...
+2026-11-11 19:56:48,626 INFO  target seed 8 generated in 1.0s
+2026-11-11 19:56:48,887 INFO  candidate generated seed 8: landmark confidence head=0.44 eyes=0.83 nose=0.36 mouth=0.82 -> ok
+2026-11-11 19:56:48,898 INFO  generating target: prompt='man bring umbrella' style=realistic seed=9 ...
+2026-11-11 19:56:49,722 INFO  target seed 9 generated in 0.8s
+2026-11-11 19:56:50,045 INFO  candidate generated seed 9: landmark confidence head=0.52 eyes=0.65 nose=0.38 mouth=0.74 -> ok
+2026-11-11 19:56:50,050 INFO  generating target: prompt='man bring umbrella' style=realistic seed=10 ...
+2026-11-11 19:56:51,650 INFO  target seed 10 generated in 1.6s
+2026-11-11 19:56:51,977 INFO  candidate generated seed 10: landmark confidence head=0.50 eyes=0.89 nose=0.39 mouth=0.97 -> ok
+2026-11-11 19:56:51,982 INFO  generating target: prompt='man bring umbrella' style=realistic seed=11 ...
+2026-11-11 19:56:53,311 INFO  target seed 11 generated in 1.3s
+2026-11-11 19:56:53,632 INFO  candidate generated seed 11: landmark confidence head=0.79 eyes=0.89 nose=0.41 mouth=0.91 -> ok
+2026-11-11 19:56:53,655 INFO  candidate 4/4 chosen (best, automatic): seed 11
+2026-11-11 19:56:53,695 INFO  POST /api/regenerate 200 6021ms
+2026-11-11 19:57:45,656 INFO  pin from 6 strokes, prompt='man wear bandana' style=anime
+2026-11-11 19:57:45,658 INFO  generating target: prompt='man wear bandana' style=anime seed=0 ...
+2026-11-11 19:57:48,121 INFO  target seed 0 generated in 2.5s
+2026-11-11 19:57:48,535 INFO  candidate generated seed 0: landmark confidence head=0.95 eyes=0.92 nose=0.50 mouth=0.88 -> ok
+2026-11-11 19:57:48,541 INFO  generating target: prompt='man wear bandana' style=anime seed=1 ...
+2026-11-11 19:57:50,085 INFO  target seed 1 generated in 1.5s
+2026-11-11 19:57:50,459 INFO  candidate generated seed 1: landmark confidence head=0.56 eyes=0.89 nose=0.31 mouth=0.54 -> ok
+2026-11-11 19:57:50,464 INFO  generating target: prompt='man wear bandana' style=anime seed=2 ...
+2026-11-11 19:57:51,866 INFO  target seed 2 generated in 1.4s
+2026-11-11 19:57:52,233 INFO  candidate generated seed 2: landmark confidence head=0.62 eyes=0.94 nose=0.45 mouth=0.93 -> ok
+2026-11-11 19:57:52,237 INFO  generating target: prompt='man wear bandana' style=anime seed=3 ...
+2026-11-11 19:57:54,349 INFO  target seed 3 generated in 2.1s
+2026-11-11 19:57:54,757 INFO  candidate generated seed 3: landmark confidence head=0.61 eyes=0.77 nose=0.43 mouth=0.93 -> ok
+2026-11-11 19:57:54,762 INFO  candidate 1/4 chosen (best, automatic): seed 0
+2026-11-11 19:57:54,801 INFO  POST /api/pin 200 12749ms
+2026-11-11 19:57:56,922 INFO  candidate 2/4 chosen by the user: seed 1
+2026-11-11 19:57:56,974 INFO  POST /api/choose 200 52ms
+2026-11-11 19:57:58,089 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 19:57:58,134 INFO  POST /api/choose 200 45ms
+2026-11-11 19:57:59,545 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 19:57:59,595 INFO  POST /api/choose 200 50ms
+2026-11-11 19:58:01,457 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 19:58:01,503 INFO  POST /api/choose 200 45ms
+2026-11-11 19:58:03,505 INFO  candidate 2/4 chosen by the user: seed 1
+2026-11-11 19:58:03,556 INFO  POST /api/choose 200 50ms
+2026-11-11 19:58:04,345 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 19:58:04,395 INFO  POST /api/choose 200 49ms
+2026-11-11 19:58:05,153 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 19:58:05,191 INFO  POST /api/choose 200 39ms
+2026-11-11 19:58:05,970 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 19:58:06,018 INFO  POST /api/choose 200 48ms
+2026-11-11 19:58:12,349 INFO  generating target: prompt='man wear bandana' style=anime seed=4 ...
+2026-11-11 19:58:13,182 INFO  target seed 4 generated in 0.8s
+2026-11-11 19:58:13,458 INFO  candidate generated seed 4: landmark confidence head=0.70 eyes=0.68 nose=0.65 mouth=0.92 -> ok
+2026-11-11 19:58:13,464 INFO  generating target: prompt='man wear bandana' style=anime seed=5 ...
+2026-11-11 19:58:14,729 INFO  target seed 5 generated in 1.3s
+2026-11-11 19:58:15,085 INFO  candidate generated seed 5: landmark confidence head=0.93 eyes=0.96 nose=0.59 mouth=0.97 -> ok
+2026-11-11 19:58:15,089 INFO  generating target: prompt='man wear bandana' style=anime seed=6 ...
+2026-11-11 19:58:17,469 INFO  target seed 6 generated in 2.4s
+2026-11-11 19:58:17,828 INFO  candidate generated seed 6: landmark confidence head=0.47 eyes=0.92 nose=0.43 mouth=0.87 -> ok
+2026-11-11 19:58:17,835 INFO  generating target: prompt='man wear bandana' style=anime seed=7 ...
+2026-11-11 19:58:19,533 INFO  target seed 7 generated in 1.7s
+2026-11-11 19:58:19,931 INFO  candidate generated seed 7: landmark confidence head=0.68 eyes=0.90 nose=0.53 mouth=0.72 -> ok
+2026-11-11 19:58:19,954 INFO  candidate 1/4 chosen (best, automatic): seed 4
+2026-11-11 19:58:19,990 INFO  POST /api/regenerate 200 7641ms
+2026-11-11 19:58:21,561 INFO  candidate 2/4 chosen by the user: seed 5
+2026-11-11 19:58:21,601 INFO  POST /api/choose 200 40ms
+2026-11-11 19:58:22,241 INFO  candidate 4/4 chosen by the user: seed 7
+2026-11-11 19:58:22,285 INFO  POST /api/choose 200 44ms
+2026-11-11 19:58:23,145 INFO  candidate 3/4 chosen by the user: seed 6
+2026-11-11 19:58:23,188 INFO  POST /api/choose 200 43ms
+2026-11-11 19:58:24,081 INFO  candidate 2/4 chosen by the user: seed 5
+2026-11-11 19:58:24,121 INFO  POST /api/choose 200 40ms
+2026-11-11 19:58:28,794 INFO  generating target: prompt='man wear bandana' style=anime seed=8 ...
+2026-11-11 19:58:29,577 INFO  target seed 8 generated in 0.8s
+2026-11-11 19:58:29,946 INFO  candidate generated seed 8: landmark confidence head=0.83 eyes=0.96 nose=0.29 mouth=0.89 -> ok
+2026-11-11 19:58:29,951 INFO  generating target: prompt='man wear bandana' style=anime seed=9 ...
+2026-11-11 19:58:31,531 INFO  target seed 9 generated in 1.6s
+2026-11-11 19:58:31,901 INFO  candidate generated seed 9: landmark confidence head=0.86 eyes=0.64 nose=0.28 mouth=0.89 -> ok
+2026-11-11 19:58:31,907 INFO  generating target: prompt='man wear bandana' style=anime seed=10 ...
+2026-11-11 19:58:34,486 INFO  target seed 10 generated in 2.6s
+2026-11-11 19:58:34,914 INFO  candidate generated seed 10: landmark confidence head=0.71 eyes=0.89 nose=0.47 mouth=0.93 -> ok
+2026-11-11 19:58:34,946 INFO  generating target: prompt='man wear bandana' style=anime seed=11 ...
+2026-11-11 19:58:37,096 INFO  target seed 11 generated in 2.1s
+2026-11-11 19:58:37,462 INFO  candidate generated seed 11: landmark confidence head=0.96 eyes=1.00 nose=0.60 mouth=0.91 -> ok
+2026-11-11 19:58:37,467 INFO  candidate 4/4 chosen (best, automatic): seed 11
+2026-11-11 19:58:37,511 INFO  POST /api/regenerate 200 8717ms
+2026-11-11 19:58:41,002 INFO  candidate 3/4 chosen by the user: seed 10
+2026-11-11 19:58:41,052 INFO  POST /api/choose 200 49ms
+2026-11-11 19:58:41,961 INFO  candidate 1/4 chosen by the user: seed 8
+2026-11-11 19:58:42,003 INFO  POST /api/choose 200 42ms
+2026-11-11 19:58:42,713 INFO  candidate 2/4 chosen by the user: seed 9
+2026-11-11 19:58:42,758 INFO  POST /api/choose 200 46ms
+2026-11-11 19:58:43,993 INFO  candidate 4/4 chosen by the user: seed 11
+2026-11-11 19:58:44,039 INFO  POST /api/choose 200 46ms
+2026-11-11 19:58:44,897 INFO  candidate 3/4 chosen by the user: seed 10
+2026-11-11 19:58:44,943 INFO  POST /api/choose 200 46ms
+2026-11-11 19:58:46,994 INFO  candidate 1/4 chosen by the user: seed 8
+2026-11-11 19:58:47,048 INFO  POST /api/choose 200 54ms
+2026-11-11 19:58:48,113 INFO  candidate 3/4 chosen by the user: seed 10
+2026-11-11 19:58:48,162 INFO  POST /api/choose 200 50ms
+2026-11-11 20:02:08,921 INFO  pin from 5 strokes, prompt='woman with cap hat' style=pencil
+2026-11-11 20:02:08,923 INFO  generating target: prompt='woman with cap hat' style=pencil seed=0 ...
+2026-11-11 20:02:11,528 INFO  target seed 0 generated in 2.6s
+2026-11-11 20:02:11,883 INFO  candidate generated seed 0: landmark confidence head=0.65 eyes=0.96 nose=0.41 mouth=0.90 -> ok
+2026-11-11 20:02:11,888 INFO  generating target: prompt='woman with cap hat' style=pencil seed=1 ...
+2026-11-11 20:02:15,441 INFO  target seed 1 generated in 3.6s
+2026-11-11 20:02:15,801 INFO  candidate generated seed 1: landmark confidence head=0.79 eyes=0.99 nose=0.45 mouth=1.00 -> ok
+2026-11-11 20:02:15,808 INFO  generating target: prompt='woman with cap hat' style=pencil seed=2 ...
+2026-11-11 20:02:19,343 INFO  target seed 2 generated in 3.5s
+2026-11-11 20:02:19,718 INFO  candidate generated seed 2: landmark confidence head=0.69 eyes=0.79 nose=0.48 mouth=0.97 -> ok
+2026-11-11 20:02:19,740 INFO  generating target: prompt='woman with cap hat' style=pencil seed=3 ...
+2026-11-11 20:02:23,283 INFO  target seed 3 generated in 3.5s
+2026-11-11 20:02:23,639 INFO  candidate generated seed 3: landmark confidence head=0.71 eyes=0.81 nose=0.40 mouth=0.94 -> ok
+2026-11-11 20:02:23,645 INFO  candidate 3/4 chosen (best, automatic): seed 2
+2026-11-11 20:02:23,689 INFO  POST /api/pin 200 20743ms
+2026-11-11 20:02:45,617 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 20:02:45,664 INFO  POST /api/choose 200 47ms
+2026-11-11 20:02:46,945 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 20:02:46,985 INFO  POST /api/choose 200 41ms
+2026-11-11 20:02:47,793 INFO  candidate 2/4 chosen by the user: seed 1
+2026-11-11 20:02:47,838 INFO  POST /api/choose 200 45ms
+2026-11-11 20:02:49,049 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 20:02:49,086 INFO  POST /api/choose 200 37ms
+2026-11-11 20:03:40,608 INFO  pin from 13 strokes, prompt='woman with long hair' style=realistic
+2026-11-11 20:03:40,610 INFO  generating target: prompt='woman with long hair' style=realistic seed=0 ...
+2026-11-11 20:03:43,069 INFO  target seed 0 generated in 2.5s
+2026-11-11 20:03:43,480 INFO  candidate generated seed 0: landmark confidence head=0.64 eyes=0.88 nose=0.42 mouth=0.95 -> ok
+2026-11-11 20:03:43,486 INFO  generating target: prompt='woman with long hair' style=realistic seed=1 ...
+2026-11-11 20:03:46,907 INFO  target seed 1 generated in 3.4s
+2026-11-11 20:03:47,257 INFO  candidate generated seed 1: landmark confidence head=0.59 eyes=0.91 nose=0.53 mouth=0.91 -> ok
+2026-11-11 20:03:47,263 INFO  generating target: prompt='woman with long hair' style=realistic seed=2 ...
+2026-11-11 20:03:50,652 INFO  target seed 2 generated in 3.4s
+2026-11-11 20:03:51,009 INFO  candidate generated seed 2: landmark confidence head=0.60 eyes=0.83 nose=0.54 mouth=0.82 -> ok
+2026-11-11 20:03:51,015 INFO  generating target: prompt='woman with long hair' style=realistic seed=3 ...
+2026-11-11 20:03:54,454 INFO  target seed 3 generated in 3.4s
+2026-11-11 20:03:54,851 INFO  candidate generated seed 3: landmark confidence head=0.70 eyes=0.96 nose=0.42 mouth=0.94 -> ok
+2026-11-11 20:03:54,858 INFO  candidate 3/4 chosen (best, automatic): seed 2
+2026-11-11 20:03:54,898 INFO  POST /api/pin 200 19704ms
+2026-11-11 20:03:57,065 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 20:03:57,109 INFO  POST /api/choose 200 43ms
+2026-11-11 20:03:58,122 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 20:03:58,166 INFO  POST /api/choose 200 45ms
+2026-11-11 20:03:58,865 INFO  candidate 2/4 chosen by the user: seed 1
+2026-11-11 20:03:58,912 INFO  POST /api/choose 200 47ms
+2026-11-11 20:03:59,793 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 20:03:59,831 INFO  POST /api/choose 200 39ms
+2026-11-11 20:04:03,045 INFO  visible layers: block-in,skeleton
+2026-11-11 20:04:03,093 INFO  POST /api/visible 200 49ms
+2026-11-11 20:04:03,680 INFO  visible layers: block-in,skeleton,contours
+2026-11-11 20:04:03,727 INFO  POST /api/visible 200 47ms
+2026-11-11 20:04:05,251 INFO  visible layers: block-in,skeleton,contours,shading
+2026-11-11 20:04:05,310 INFO  POST /api/visible 200 59ms
+2026-11-11 20:04:07,450 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 20:04:07,501 INFO  POST /api/visible 200 51ms
+2026-11-11 20:05:33,198 INFO  pin from 8 strokes, prompt='kid with glass' style=realistic
+2026-11-11 20:05:33,201 INFO  generating target: prompt='kid with glass' style=realistic seed=0 ...
+2026-11-11 20:05:34,378 INFO  target seed 0 generated in 1.2s
+2026-11-11 20:05:34,623 INFO  candidate generated seed 0: landmark confidence head=0.27 eyes=0.96 nose=0.51 mouth=0.94 -> ok
+2026-11-11 20:05:34,628 INFO  generating target: prompt='kid with glass' style=realistic seed=1 ...
+2026-11-11 20:05:38,120 INFO  target seed 1 generated in 3.5s
+2026-11-11 20:05:38,479 INFO  candidate generated seed 1: landmark confidence head=0.51 eyes=0.84 nose=0.67 mouth=0.91 -> ok
+2026-11-11 20:05:38,486 INFO  generating target: prompt='kid with glass' style=realistic seed=2 ...
+2026-11-11 20:05:42,086 INFO  target seed 2 generated in 3.6s
+2026-11-11 20:05:42,465 INFO  candidate generated seed 2: landmark confidence head=0.56 eyes=0.95 nose=0.86 mouth=0.91 -> ok
+2026-11-11 20:05:42,471 INFO  generating target: prompt='kid with glass' style=realistic seed=3 ...
+2026-11-11 20:05:45,788 INFO  target seed 3 generated in 3.3s
+2026-11-11 20:05:46,119 INFO  candidate generated seed 3: landmark confidence head=0.45 eyes=0.82 nose=0.79 mouth=0.79 -> ok
+2026-11-11 20:05:46,124 INFO  candidate 3/4 chosen (best, automatic): seed 2
+2026-11-11 20:05:46,167 INFO  POST /api/pin 200 16163ms
+2026-11-11 20:05:48,897 INFO  candidate 2/4 chosen by the user: seed 1
+2026-11-11 20:05:48,942 INFO  POST /api/choose 200 45ms
+2026-11-11 20:05:51,354 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 20:05:51,398 INFO  POST /api/choose 200 45ms
+2026-11-11 20:05:53,667 INFO  candidate 4/4 chosen by the user: seed 3
+2026-11-11 20:05:53,712 INFO  POST /api/choose 200 45ms
+2026-11-11 20:05:54,857 INFO  candidate 3/4 chosen by the user: seed 2
+2026-11-11 20:05:54,897 INFO  POST /api/choose 200 40ms
+2026-11-11 20:05:55,593 INFO  candidate 1/4 chosen by the user: seed 0
+2026-11-11 20:05:55,633 INFO  POST /api/choose 200 40ms
+2026-11-11 20:06:08,618 INFO  generating target: prompt='kid with glass' style=realistic seed=4 ...
+2026-11-11 20:06:10,732 INFO  target seed 4 generated in 2.1s
+2026-11-11 20:06:11,145 INFO  candidate generated seed 4: landmark confidence head=0.83 eyes=0.91 nose=0.74 mouth=0.84 -> ok
+2026-11-11 20:06:11,175 INFO  generating target: prompt='kid with glass' style=realistic seed=5 ...
+2026-11-11 20:06:14,648 INFO  target seed 5 generated in 3.5s
+2026-11-11 20:06:15,454 INFO  candidate generated seed 5: landmark confidence head=0.60 eyes=0.98 nose=0.55 mouth=0.94 -> ok
+2026-11-11 20:06:15,496 INFO  generating target: prompt='kid with glass' style=realistic seed=6 ...
+2026-11-11 20:06:20,224 INFO  target seed 6 generated in 4.7s
+2026-11-11 20:06:20,610 INFO  candidate generated seed 6: landmark confidence head=0.77 eyes=0.96 nose=0.63 mouth=0.84 -> ok
+2026-11-11 20:06:20,617 INFO  generating target: prompt='kid with glass' style=realistic seed=7 ...
+2026-11-11 20:06:29,292 INFO  target seed 7 generated in 8.7s
+2026-11-11 20:06:29,767 INFO  candidate generated seed 7: landmark confidence head=0.60 eyes=0.95 nose=0.77 mouth=0.96 -> ok
+2026-11-11 20:06:29,776 INFO  candidate 1/4 chosen (best, automatic): seed 4
+2026-11-11 20:06:29,848 INFO  POST /api/regenerate 200 21230ms
+2026-11-11 20:06:33,969 INFO  candidate 2/4 chosen by the user: seed 5
+2026-11-11 20:06:34,012 INFO  POST /api/choose 200 43ms
+2026-11-11 20:06:34,785 INFO  candidate 4/4 chosen by the user: seed 7
+2026-11-11 20:06:34,824 INFO  POST /api/choose 200 39ms
+2026-11-11 20:06:35,496 INFO  candidate 3/4 chosen by the user: seed 6
+2026-11-11 20:06:35,544 INFO  POST /api/choose 200 48ms
+2026-11-11 20:06:37,081 INFO  candidate 2/4 chosen by the user: seed 5
+2026-11-11 20:06:37,123 INFO  POST /api/choose 200 42ms
+2026-11-11 20:06:38,329 INFO  candidate 3/4 chosen by the user: seed 6
+2026-11-11 20:06:38,375 INFO  POST /api/choose 200 45ms
+2026-11-11 20:06:56,891 INFO  visible layers: block-in,skeleton
+2026-11-11 20:06:56,942 INFO  POST /api/visible 200 52ms
+2026-11-11 20:10:51,052 WARNING GET /participant 404
+2026-11-11 20:11:07,617 INFO  GET / (page loaded)
+2026-11-11 20:11:07,687 INFO  POST /api/packages 200 0ms
+2026-11-11 20:11:35,549 INFO  === SketchFade stop ===
+2026-11-11 20:11:47,972 INFO  === SketchFade start, port 9100 ===
+2026-11-11 20:11:48,060 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 20:11:48,245 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5090 Laptop GPU (24 GB)
+2026-11-11 20:11:48,246 INFO  packages: 0 (0 approved)
+2026-11-11 20:11:48,247 INFO  serving on http://127.0.0.1:9100
+2026-11-11 20:11:50,796 INFO  GET /participant (page loaded)
+2026-11-11 20:11:50,855 INFO  POST /api/packages 200 0ms
+2026-11-11 20:13:16,001 INFO  GET / (page loaded)
+2026-11-11 20:13:16,071 INFO  POST /api/packages 200 1ms
+2026-11-11 20:14:07,374 INFO  GET / (page loaded)
+2026-11-11 20:14:07,441 INFO  POST /api/packages 200 0ms
+2026-11-11 20:14:53,166 INFO  pin from 9 strokes, prompt='kid with t shirt' style=anime
+2026-11-11 20:14:53,168 INFO  generating target: prompt='kid with t shirt' style=anime seed=0 ...
+2026-11-11 20:14:56,109 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 20:14:56,296 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 20:14:56,297 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 20:14:57,067 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 20:14:57,249 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 20:14:57,839 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 20:14:58,021 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 20:15:04,456 INFO  target seed 0 generated in 11.3s
+2026-11-11 20:15:05,511 INFO  candidate generated seed 0: landmark confidence head=0.00 eyes=0.00 nose=0.00 mouth=0.00 -> NO FACE
+2026-11-11 20:15:05,512 INFO  generating target: prompt='kid with t shirt' style=anime seed=1 ...
+2026-11-11 20:15:08,734 INFO  target seed 1 generated in 3.2s
+2026-11-11 20:15:09,200 INFO  candidate generated seed 1: landmark confidence head=0.58 eyes=0.67 nose=0.26 mouth=0.82 -> ok
+2026-11-11 20:15:09,212 INFO  generating target: prompt='kid with t shirt' style=anime seed=2 ...
+2026-11-11 20:15:12,441 INFO  target seed 2 generated in 3.2s
+2026-11-11 20:15:12,771 INFO  candidate generated seed 2: landmark confidence head=0.82 eyes=0.68 nose=0.41 mouth=0.64 -> ok
+2026-11-11 20:15:12,777 INFO  generating target: prompt='kid with t shirt' style=anime seed=3 ...
+2026-11-11 20:15:16,015 INFO  target seed 3 generated in 3.2s
+2026-11-11 20:15:16,382 INFO  candidate generated seed 3: landmark confidence head=0.75 eyes=0.47 nose=0.23 mouth=0.59 -> ok
+2026-11-11 20:15:16,389 INFO  candidate 2/3 chosen (best, automatic): seed 2
+2026-11-11 20:15:16,442 INFO  POST /api/pin 200 27998ms
+2026-11-11 20:15:24,442 INFO  candidate 3/3 chosen by the user: seed 3
+2026-11-11 20:15:24,488 INFO  POST /api/choose 200 46ms
+2026-11-11 20:15:25,098 INFO  candidate 1/3 chosen by the user: seed 1
+2026-11-11 20:15:25,134 INFO  POST /api/choose 200 36ms
+2026-11-11 20:15:25,698 INFO  candidate 2/3 chosen by the user: seed 2
+2026-11-11 20:15:25,735 INFO  POST /api/choose 200 37ms
+2026-11-11 20:15:27,049 INFO  candidate 3/3 chosen by the user: seed 3
+2026-11-11 20:15:27,084 INFO  POST /api/choose 200 34ms
+2026-11-11 20:15:28,211 INFO  candidate 2/3 chosen by the user: seed 2
+2026-11-11 20:15:28,250 INFO  POST /api/choose 200 39ms
+2026-11-11 20:16:00,665 INFO  package saved: packages/20261111_201600_s2 (pending review)
+2026-11-11 20:16:00,666 INFO  POST /api/package/save 200 23ms
+2026-11-11 20:16:00,685 INFO  POST /api/packages 200 15ms
+2026-11-11 20:16:11,495 INFO  GET /participant (page loaded)
+2026-11-11 20:16:11,532 INFO  POST /api/packages 200 0ms
+2026-11-11 20:16:26,933 INFO  package 20261111_201600_s2 approved by Arif
+2026-11-11 20:16:26,934 INFO  POST /api/package/review 200 3ms
+2026-11-11 20:16:26,953 INFO  POST /api/packages 200 15ms
+2026-11-11 20:16:33,382 INFO  GET /participant (page loaded)
+2026-11-11 20:16:33,424 INFO  POST /api/packages 200 1ms
+2026-11-11 20:16:35,386 WARNING POST /api/start 200 0ms error=participant id: letters, digits, - or _
+2026-11-11 20:16:39,518 INFO  session started participant=01 group=adaptive package=20261111_201600_s2 | head=L3 eyes=L3 nose=L3 mouth=L3 neck=L3
+2026-11-11 20:16:39,547 INFO  POST /api/start 200 49ms

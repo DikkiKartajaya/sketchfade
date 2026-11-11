@@ -6,3 +6,5 @@ diffusers
 transformers
 peft
 accelerate
+# face landmarks of generated targets (ghost.generated_layers)
+mediapipe

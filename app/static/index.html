@@ -4,15 +4,26 @@
 <meta charset="utf-8">
 <title>SketchFade</title>
 <style>
-  body { margin: 0; font-family: "Segoe UI", sans-serif; background: #e8e4da; color: #4a4234;
+  /* the board follows the window (480-600 px); drawing without a guide
+     (probes, tests) widens the side column for a larger side reference */
+  body { --side: 190px; --board: max(480px, min(100vh - 150px, 100vw - var(--side) - 390px, 600px));
+         margin: 0; font-family: "Segoe UI", sans-serif; background: #e8e4da; color: #4a4234;
          display: flex; justify-content: center; gap: 18px; padding: 24px; }
+  body.noguide { --side: 320px; }
   #left { display: flex; flex-direction: column; gap: 10px; }
-  #board { position: relative; width: 480px; height: 480px; background: #f7f2e7;
+  #board { position: relative; width: var(--board); height: var(--board); background: #f7f2e7;
            border-radius: 6px; box-shadow: 0 6px 24px rgba(60,50,30,.25); touch-action: none; }
-  #board img, #board canvas { position: absolute; inset: 0; width: 480px; height: 480px; }
+  #board img, #board canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   #banner { min-height: 20px; font-weight: 600; color: #8a3b1c; }
-  #refbox { display: flex; gap: 10px; align-items: flex-start; }
+  #panel { width: var(--side); display: flex; flex-direction: column; gap: 10px; font-size: 13px; padding-top: 30px; }
+  #refbox { display: flex; flex-direction: column; gap: 6px; }
   #ref { width: 160px; height: 160px; background: #fbf8f0; border: 1px solid #c9bfa8; border-radius: 6px; }
+  body.noguide #ref { width: 310px; height: 310px; }
+  .lcard { display: flex; gap: 8px; align-items: center; padding: 3px; border: 2px solid transparent;
+           border-radius: 6px; cursor: pointer; }
+  .lcard.cur { border-color: #c9bfa8; background: #f1ece0; }
+  .lcard img { width: 72px; height: 72px; background: #fbf8f0; border: 1px solid #c9bfa8; border-radius: 4px; }
+  .lcard.off img { opacity: .45; }
   #ui { width: 270px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
   h1 { font-size: 18px; margin: 0; }
   fieldset { border: 1px solid #c9bfa8; border-radius: 6px; padding: 8px; display: flex;
@@ -28,6 +39,13 @@
   .part { margin: 3px 0; display: flex; justify-content: space-between; }
   .lv { font-weight: 600; }
   .hidden { display: none !important; }
+  #summaryBox { position: fixed; inset: 0; background: rgba(40,34,24,.55); display: flex;
+                align-items: center; justify-content: center; }
+  #summaryCard { display: flex; gap: 18px; padding: 18px; background: #e8e4da; border-radius: 6px; }
+  #stack { width: 480px; height: 480px; background: #f7f2e7; border-radius: 6px; }
+  #summaryUi { width: 300px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+  .thumb { display: flex; gap: 8px; align-items: center; }
+  .thumb canvas { width: 120px; height: 120px; background: #fbf8f0; border: 1px solid #c9bfa8; border-radius: 6px; }
 </style>
 </head>
 <body>
@@ -37,9 +55,24 @@
     <img id="ghost" alt="">
     <canvas id="ink" width="480" height="480"></canvas>
   </div>
+</div>
+<div id="panel">
+  <div id="targetBox" class="hidden">
+    <img id="targetImg" alt="" style="width:160px; height:160px; border:1px solid #c9bfa8; border-radius:6px">
+    <div class="muted">Generated target (development only, SHOW_TARGET in server.py)</div>
+  </div>
+  <fieldset id="layerBox">
+    <legend>Layers</legend>
+    <div class="muted">Tick a layer to show it on the canvas, untick to hide it.</div>
+    <div id="layerList"></div>
+    <div class="row">
+      <button id="showAll">Show all</button>
+      <button id="clearBg">Clear background</button>
+    </div>
+  </fieldset>
   <div id="refbox">
     <img id="ref" alt="">
-    <div class="muted" id="refNote">Side reference: the current construction step.<br>
+    <div class="muted" id="refNote">Side reference: the step to draw.<br>
       Draw it on the large canvas.</div>
   </div>
 </div>
@@ -78,6 +111,7 @@
     <button id="probe" disabled>Probe this layer</button>
     <button id="submit" class="primary hidden">Submit probe</button>
     <button id="export" class="primary hidden">Finish test drawing</button>
+    <button id="summary" disabled>Session summary</button>
     <label>Pen width: <span id="penVal">3</span> px
       <input type="range" id="pen" min="1" max="12" value="3" style="width:100%"></label>
   </fieldset>
@@ -90,9 +124,14 @@
   <details id="prepBox">
     <summary><b>Prepare targets</b> (before recruitment)</summary>
     <fieldset>
-      <div class="muted">Sketch a rough face, add a prompt, Generate. Save packages
-        that pass the landmark check, then review them with <code>package.py</code>.</div>
+      <div class="muted">Sketch a rough face, add a prompt, pick a style, Generate. Save packages
+        that pass the landmark check, then review them below.</div>
       <input type="text" id="prompt" placeholder="prompt, e.g. old man with a beard">
+      <select id="style">
+        <option value="pencil">pencil drawing style</option>
+        <option value="realistic">realistic (photo) style</option>
+        <option value="anime">anime style</option>
+      </select>
       <div class="row">
         <button id="pin">Generate target</button>
         <button id="regen" disabled>Regenerate</button>
@@ -100,9 +139,30 @@
       <div id="conf" class="muted"></div>
       <button id="savePkg" disabled>Save package</button>
       <button id="newSketch">New sketch</button>
+      <div class="muted"><b>Expert review</b>: an illustrator checks a saved package;
+        approved packages can be opened under Study session.</div>
+      <select id="pending"></select>
+      <input type="text" id="reviewer" placeholder="reviewer name">
+      <div class="row">
+        <button id="approve">Approve</button>
+        <button id="reject">Reject</button>
+      </div>
     </fieldset>
   </details>
   <div id="status" class="muted"></div>
+</div>
+
+<div id="summaryBox" class="hidden">
+  <div id="summaryCard">
+    <canvas id="stack" width="480" height="480"></canvas>
+    <div id="summaryUi">
+      <h1>Best probe per layer</h1>
+      <div class="muted">The lowest-error unassisted probe of each layer in this session.
+        Tick layers to stack them on the large canvas.</div>
+      <div id="thumbs"></div>
+      <button id="closeSummary" class="primary">Close</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -126,8 +186,19 @@ async function post(url, body = {}) {
 const png = b64 => b64 ? "data:image/png;base64," + b64 : "";
 function setGhost(b64) { $("ghost").src = png(b64); }
 
+// Points and pen widths live in a 480 x 480 drawing space (API, logs, exports);
+// the board is shown larger, so the ink canvas is scaled to its on-screen size.
+const UI = 480;
+function fit() {
+  ink.width = ink.height = Math.round(ink.getBoundingClientRect().width * devicePixelRatio);
+  redraw();
+}
+new ResizeObserver(fit).observe(ink);
+
 function redraw() {
-  ctx.clearRect(0, 0, 480, 480);
+  const k = ink.width / UI;
+  ctx.setTransform(k, 0, 0, k, 0, 0);
+  ctx.clearRect(0, 0, UI, UI);
   ctx.strokeStyle = "#24346e"; ctx.lineCap = ctx.lineJoin = "round";
   for (const s of strokes.concat(cur ? [cur] : [])) {
     ctx.lineWidth = s.w;
@@ -144,6 +215,8 @@ function show(s) {
   if (!s || s.error) return;
   st = s; lastGhost = s.ghost; setGhost(s.ghost);
   $("ref").src = png(s.ref);
+  $("targetBox").classList.toggle("hidden", !s.target_img);
+  $("targetImg").src = png(s.target_img);
   const inStudy = !!s.participant, test = s.task !== "practice", probing = s.probe !== null;
   $("layer").textContent = probing ? `probe: ${s.layers[s.probe]}`
     : test ? "test drawing" : `${s.layer + 1}. ${s.layers[s.layer]}`;
@@ -154,6 +227,7 @@ function show(s) {
   $("probe").classList.toggle("hidden", probing);
   $("submit").classList.toggle("hidden", !probing);
   $("export").classList.toggle("hidden", !test);
+  $("summary").disabled = probing || !inStudy;
   $("task").disabled = !inStudy || probing;
   $("task").value = s.task;
   $("regen").disabled = !!s.package || probing;
@@ -161,6 +235,18 @@ function show(s) {
   $("savePkg").disabled = !!s.package || !s.valid;
   // the help panel is for the experimenter; hidden during tests and probes
   $("levelBox").classList.toggle("hidden", test || probing);
+  // layers panel in practice and preview; tests and probes only get the side reference
+  $("layerBox").classList.toggle("hidden", test || probing);
+  $("refbox").classList.toggle("hidden", !(test || probing));
+  document.body.classList.toggle("noguide", test || probing);
+  $("layerList").innerHTML = s.layers.map((name, i) => {
+    const on = s.visible.includes(i), cur = i === s.layer;
+    return `<label class="lcard${cur ? " cur" : ""}${on ? "" : " off"}">
+      <img src="${png(s.thumbs[i])}" alt="">
+      <span><input type="checkbox" data-layer="${i}" ${on ? "checked" : ""}>
+        <b style="color:${s.colors[i]}">${i + 1}. ${name}</b>
+        ${cur ? '<br><span class="muted">current step</span>' : ""}</span></label>`;
+  }).join("");
   $("groupLbl").textContent = `(${s.group})`;
   $("levels").innerHTML = s.levels.map(p =>
     `<div class="part"><span><b>${p.part}</b> <span class="muted">${p.help}</span></span>
@@ -177,20 +263,23 @@ function show(s) {
 
 function setMode(m) {
   mode = m;
-  for (const id of ["check", "prev", "next", "layer", "probe"]) $(id).disabled = m === "sketch";
-  $("refbox").classList.toggle("hidden", m === "sketch");
+  for (const id of ["check", "prev", "next", "layer", "probe", "summary"]) $(id).disabled = m === "sketch";
+  $("panel").classList.toggle("hidden", m === "sketch");
   if (m === "sketch") {
+    document.body.classList.remove("noguide");
     $("phase").textContent = "Start a study session, or open Prepare targets. "
-      + "The blurred shadow is ShadowDraw's blend of similar faces; the clean "
-      + "construction guides appear after Generate target.";
+      + "The construction layers appear after Generate target.";
     $("layer").innerHTML = "&ndash;"; $("ref").src = ""; $("banner").textContent = "";
     $("levelBox").classList.add("hidden");
   }
 }
 
-// rough-sketch phase (prepare targets): one shadow request at a time, newest strokes win
+// rough-sketch phase (prepare targets): one shadow request at a time, newest strokes win.
+// Temporarily off: no ShadowDraw blend of candidate faces under the rough sketch.
+const SHADOWDRAW = false;
 let busy = false, dirty = false;
 async function updateShadow() {
+  if (!SHADOWDRAW) return;
   if (busy) { dirty = true; return; }
   busy = true;
   setGhost((await post("/api/shadow", { strokes })).shadow);
@@ -206,7 +295,10 @@ async function onStroke(s) {
   $("status").textContent = r.part ? `last stroke: ${r.part}, error ${r.err}px` : "";
 }
 
-const pos = e => { const b = ink.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+const pos = e => {
+  const b = ink.getBoundingClientRect();
+  return [(e.clientX - b.left) * UI / b.width, (e.clientY - b.top) * UI / b.height];
+};
 ink.onpointerdown = e => { ink.setPointerCapture(e.pointerId); cur = { pts: [pos(e)], w: +$("pen").value }; };
 ink.onpointermove = e => { if (cur) { cur.pts.push(pos(e)); redraw(); } };
 ink.onpointerup = () => {
@@ -217,15 +309,34 @@ ink.onpointerup = () => {
 };
 
 // --- study session ---------------------------------------------------------
-async function loadPackages() {
+async function loadPackages(select) {
   const r = await post("/api/packages");
-  const ok = (r.packages || []).filter(m => m.review.status === "approved").reverse();  // newest first
+  const all = (r.packages || []).slice().reverse();  // newest first
+  const label = m => `${m.id} ${m.prompt ? "· " + m.prompt : ""}`;
+  const ok = all.filter(m => m.review.status === "approved");
+  const pending = all.filter(m => m.review.status === "pending");
   $("pkg").innerHTML = ok.length
-    ? ok.map(m => `<option value="${m.id}">${m.id} ${m.prompt ? "· " + m.prompt : ""}</option>`).join("")
-    : `<option value="">no approved package yet</option>`;
+    ? ok.map(m => `<option value="${m.id}">${label(m)}</option>`).join("")
+    : `<option value="">no approved package yet: approve one under Prepare targets</option>`;
+  $("pending").innerHTML = pending.length
+    ? pending.map(m => `<option value="${m.id}">${label(m)}</option>`).join("")
+    : `<option value="">no package waiting for review</option>`;
+  if (select && ok.some(m => m.id === select)) $("pkg").value = select;
   if (!ok.length) $("prepBox").open = true;  // nothing to study yet: prepare first
   $("start").disabled = !ok.length;
+  $("approve").disabled = $("reject").disabled = !pending.length;
 }
+async function review(approve) {
+  const r = await post("/api/package/review", { package: $("pending").value, approve,
+                                                reviewer: $("reviewer").value });
+  if (r.error) return;
+  await loadPackages(r.package);
+  $("status").textContent = approve
+    ? `package ${r.package} approved: enter a participant id and press Start under Study session`
+    : `package ${r.package} rejected`;
+}
+$("approve").onclick = () => review(true);
+$("reject").onclick = () => review(false);
 $("start").onclick = async () => {
   const r = await post("/api/start", { participant: $("pid").value, group: $("group").value, package: $("pkg").value });
   if (r.error) return;
@@ -269,10 +380,52 @@ $("check").onclick = async () => {
   setGhost(r.ghost);
   setTimeout(() => setGhost(lastGhost), CHECK_MS);
 };
+// --- layers panel: which layers are on the canvas ---------------------------------
+async function setVisible(v) { show(await post("/api/visible", { visible: v })); }
+$("layerList").onchange = () => setVisible(
+  [...document.querySelectorAll("#layerList input:checked")].map(c => +c.dataset.layer));
+$("showAll").onclick = () => setVisible(st.layers.map((_, i) => i));
+$("clearBg").onclick = () => setVisible([]);
+
 $("clear").onclick = async () => {
   strokes = []; redraw();
   if (mode === "sketch") updateShadow();
 };
+
+// --- session summary: best probe per layer --------------------------------------
+let best = [];  // per layer, from /api/summary: the probe with the most successful parts
+
+function paint(c, drawn, color) {  // drawn: point lists as logged (the log has no pen width)
+  const g = c.getContext("2d"), k = c.width / 480;
+  g.strokeStyle = color; g.lineCap = g.lineJoin = "round"; g.lineWidth = Math.max(1, 3 * k);
+  for (const pts of drawn) {
+    g.beginPath();
+    pts.forEach(([x, y], i) => i ? g.lineTo(x * k, y * k) : g.moveTo(x * k, y * k));
+    g.stroke();
+  }
+}
+function drawStack() {
+  $("stack").getContext("2d").clearRect(0, 0, 480, 480);
+  best.forEach((b, i) => { if (b && $(`use${i}`).checked) paint($("stack"), b.strokes, st.colors[i]); });
+}
+$("summary").onclick = async () => {
+  const r = await post("/api/summary");
+  if (r.error) return;
+  best = r.best;
+  // errors are fractions of the 300 px frame, as in the per-stroke status line
+  $("thumbs").innerHTML = r.layers.map((name, i) => `<label class="thumb">
+    <canvas id="thumb${i}" width="120" height="120"></canvas>
+    <span><input type="checkbox" id="use${i}" ${best[i] ? "checked" : "disabled"}>
+      <b style="color:${st.colors[i]}">${i + 1}. ${name}</b><br>
+      <span class="muted">${best[i] ? `${best[i].success}/${best[i].parts} parts success<br>`
+        + `error ${(best[i].err * 300).toFixed(1)}px · coverage ${Math.round(best[i].cov * 100)}%<br>`
+        + best[i].time : "no probe yet"}</span></span></label>`).join("");
+  best.forEach((b, i) => { if (b) paint($(`thumb${i}`), b.strokes, st.colors[i]); });
+  r.layers.forEach((_, i) => { $(`use${i}`).onchange = drawStack; });
+  drawStack();
+  $("summaryBox").classList.remove("hidden");
+};
+$("closeSummary").onclick = () => $("summaryBox").classList.add("hidden");
 
 // --- formal tests -------------------------------------------------------------
 $("export").onclick = async () => {
@@ -294,7 +447,7 @@ async function generating(url, body) {
   return r;
 }
 $("pin").onclick = async () => {
-  const r = await generating("/api/pin", { strokes, prompt: $("prompt").value });
+  const r = await generating("/api/pin", { strokes, prompt: $("prompt").value, style: $("style").value });
   if (r.error) return;
   strokes = []; redraw(); setMode("draw"); show(r);
 };
@@ -306,9 +459,9 @@ $("regen").onclick = async () => {
 $("savePkg").onclick = async () => {
   const r = await post("/api/package/save");
   if (r.error) return;
-  $("status").textContent = `saved package ${r.package}. Approve it in a terminal: `
-    + `python package.py review ${r.package} --approve --reviewer NAME, then reload this page`;
-  loadPackages();
+  $("status").textContent = `saved package ${r.package}: review it below (Expert review)`;
+  await loadPackages();
+  $("pending").value = r.package;
 };
 $("newSketch").onclick = async () => {
   strokes = []; redraw(); setGhost(""); st = null; setMode("sketch");

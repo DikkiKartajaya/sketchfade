@@ -4,5 +4,6 @@ sessions/*.jsonl
 exports/
 targets/
 logs/
+models/
 __pycache__/
 .venv/

@@ -17,7 +17,7 @@ import time
 
 import numpy as np
 
-from ghost import LAYERS, PARTS
+from ghost import FILLED, LAYERS, PARTS
 
 L0, L1, L2, L3 = range(4)
 LEVEL_NAMES = ["L0 independent", "L1 on request", "L2 reduced", "L3 strong"]
@@ -59,7 +59,7 @@ def nn_dist(a, b):
 
 
 def guide_mask(labels):
-    """Pixels to draw for one layer. Filled layers (shading) count by their outline."""
+    """Pixels to draw for one layer. Filled layers (shading, shadow) count by their outline."""
     if not (labels > 0).any():
         return labels
     filled = labels > 0
@@ -149,7 +149,7 @@ def ghost(layers, layer, levels, check=False):
     """Overlay alpha for the current layer, part by part (alpha in [0, 1]).
     L3: guide at 0.60, L2: guide at 0.25, L1: nothing unless Check, L0: nothing."""
     out = np.zeros(layers.shape[1:], np.float32)
-    shade = 0.6 if LAYERS[layer] == "shading" else 1.0  # filled areas: lighter
+    shade = 0.6 if LAYERS[layer] in FILLED else 1.0  # filled areas: lighter
     for p, lvl in enumerate(levels):
         a = GUIDE_ALPHA.get(lvl, CHECK_ALPHA if check and lvl == L1 else 0.0)
         if a:

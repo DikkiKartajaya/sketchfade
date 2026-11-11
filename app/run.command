@@ -16,7 +16,7 @@ if [ -z "$PY" ]; then
   exit 1
 fi
 
-if ! "$PY" -c "import numpy, PIL, diffusers, peft" >/dev/null 2>&1; then
+if ! "$PY" -c "import numpy, PIL, diffusers, peft, mediapipe" >/dev/null 2>&1; then
   echo "Installing dependencies ..."
   "$PY" -m pip install --quiet -r requirements.txt
 fi

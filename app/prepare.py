@@ -6,7 +6,7 @@ guide packages (status: pending review). It also prints the confidence
 distribution, to calibrate ghost.CONF_MIN on generated targets in the pilot.
 
   python prepare.py "a young woman with short hair" "an old man with a beard"
-  python prepare.py --prompts prompts.txt --seeds 6 --keep 2
+  python prepare.py --prompts prompts.txt --seeds 6 --keep 2 --style realistic
   python prepare.py --dry-run ...          # only report confidence, save nothing
 
 Then review: python package.py list / python package.py review <id> ...
@@ -24,7 +24,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DEMO = os.path.join(HERE, "..", "shadowdraw-demo", "demo")
 sys.path.insert(0, DEMO)
 
-from engine import CANVAS, ShadowEngine  # noqa: E402
+from engine import CANVAS  # noqa: E402
 
 import generate  # noqa: E402
 import ghost  # noqa: E402
@@ -50,6 +50,7 @@ def main():
     ap.add_argument("--sketch", help="PNG rough sketch (dark strokes on white)")
     ap.add_argument("--seeds", type=int, default=6, help="seeds tried per prompt")
     ap.add_argument("--keep", type=int, default=1, help="packages kept per prompt")
+    ap.add_argument("--style", choices=list(generate.STYLES), default=generate.DEFAULT_STYLE)
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
@@ -67,34 +68,26 @@ def main():
         sketch = np.asarray(im) < 128
     else:
         sketch = default_sketch()
-    engine = ShadowEngine(os.path.join(DEMO, "data", "face_db.npz"))
-    _, info = engine.shadow(sketch)
-    if not info:
-        sys.exit("the sketch does not match any face layout")
-    dx, dy = info[0]["d"]
-    print(f"device: {generate.device_name()}  layout d=({dx}, {dy})  "
-          f"CONF_MIN={ghost.CONF_MIN}")
+    print(f"device: {generate.device_name()}  style={a.style}  CONF_MIN={ghost.CONF_MIN}")
 
     mins, saved = [], []
     for prompt in prompts:
         kept = 0
         for seed in range(a.seeds):
             t0 = time.time()
-            gray = generate.generate(sketch, prompt, seed)
-            edges = ghost.image_edges(gray)
-            lm, conf = ghost.find_landmarks(edges, dx, dy)
+            gray = generate.generate(sketch, prompt, seed, a.style)
+            layers, conf = ghost.generated_layers(gray)
             low = min(conf.values())
             mins.append(low)
-            ok = low >= ghost.CONF_MIN
+            ok = layers is not None and low >= ghost.CONF_MIN
             line = (f"{prompt[:34]!r:36} seed {seed}  {time.time() - t0:4.1f}s  "
                     + " ".join(f"{k}={v:.2f}" for k, v in conf.items())
-                    + ("  ok" if ok else "  LOW"))
+                    + ("  ok" if ok else "  LOW" if layers is not None else "  NO FACE"))
             if ok and kept < a.keep and not a.dry_run:
-                layers = ghost.build_layers(edges, dx, dy, gray, lm)
                 pid = package.save(layers, gray, {
-                    "prompt": prompt, "seed": seed, "source": "generated",
-                    "confidence": conf, "generator": "SD1.5+ControlNet+LCM",
-                    "device": generate.device_name()})
+                    "prompt": prompt, "style": a.style, "seed": seed,
+                    "source": "generated", "confidence": conf,
+                    "generator": "SD1.5+ControlNet+LCM", "device": generate.device_name()})
                 saved.append(pid)
                 kept += 1
                 line += f"  -> packages/{pid}"

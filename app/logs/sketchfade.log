@@ -54,3 +54,1059 @@
 2026-11-08 19:44:52,769 WARNING POST /api/pin 200 36ms error=draw a rough face first
 2026-11-08 19:44:56,553 WARNING POST /api/pin 200 35ms error=draw a rough face first
 2026-11-08 19:46:06,580 INFO  === SketchFade stop ===
+2026-11-11 15:22:25,307 INFO  === SketchFade start, port 9100 ===
+2026-11-11 15:22:25,400 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 15:22:25,400 INFO  target source: SD + ControlNet + LCM on cpu
+2026-11-11 15:22:25,401 INFO  packages: 0 (0 approved)
+2026-11-11 15:22:25,401 INFO  serving on http://127.0.0.1:9100
+2026-11-11 15:22:26,287 INFO  GET / (page loaded)
+2026-11-11 15:22:26,309 INFO  POST /api/packages 200 0ms
+2026-11-11 15:22:46,125 WARNING POST /api/pin 200 41ms error=draw a rough face first
+2026-11-11 15:22:58,814 INFO  pin from 5 strokes, prompt='asian woman potrait'
+2026-11-11 15:22:58,814 INFO  generating target: prompt='asian woman potrait' seed=0 ...
+2026-11-11 15:23:00,870 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 15:23:01,090 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 15:23:01,091 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 15:23:01,388 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 15:23:01,588 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 15:23:03,880 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 15:23:04,129 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 15:23:15,171 INFO  target seed 0 generated in 16.4s
+2026-11-11 15:23:15,178 INFO  target generated: landmark confidence head=0.22 eyes=0.11 nose=0.92 mouth=0.00 -> LOW
+2026-11-11 15:23:15,179 INFO  generating target: prompt='asian woman potrait' seed=1 ...
+2026-11-11 15:23:22,359 INFO  target seed 1 generated in 7.2s
+2026-11-11 15:23:22,363 INFO  target generated: landmark confidence head=0.42 eyes=0.55 nose=0.95 mouth=0.06 -> LOW
+2026-11-11 15:23:22,364 INFO  generating target: prompt='asian woman potrait' seed=2 ...
+2026-11-11 15:23:30,171 INFO  target seed 2 generated in 7.8s
+2026-11-11 15:23:30,175 INFO  target generated: landmark confidence head=0.35 eyes=0.56 nose=0.88 mouth=0.61 -> ok
+2026-11-11 15:23:30,189 INFO  POST /api/pin 200 33246ms
+2026-11-11 15:23:39,470 INFO  probe start layer=block-in
+2026-11-11 15:23:39,475 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:23:46,003 INFO  probe_stroke layer=block-in part=head err=13.4px n=59 level=L3 task=practice (no help)
+2026-11-11 15:23:46,007 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:23:46,777 INFO  probe_stroke layer=block-in part=head err=23.8px n=24 level=L3 task=practice (no help)
+2026-11-11 15:23:46,781 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:23:47,413 INFO  probe_stroke layer=block-in part=head err=7.0px n=21 level=L3 task=practice (no help)
+2026-11-11 15:23:47,416 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:23:48,137 INFO  probe_stroke layer=block-in part=eyes err=10.0px n=27 level=L3 task=practice (no help)
+2026-11-11 15:23:48,141 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:23:49,242 INFO  probe_stroke layer=block-in part=eyes err=8.0px n=33 level=L3 task=practice (no help)
+2026-11-11 15:23:49,246 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:00,119 INFO  probe layer=block-in head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) mouth:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:24:00,124 INFO  POST /api/probe/submit 200 5ms
+2026-11-11 15:24:00,126 INFO  layer 2. skeleton
+2026-11-11 15:24:00,128 INFO  POST /api/layer 200 2ms
+2026-11-11 15:24:01,934 INFO  stroke layer=skeleton part=head err=2.8px n=29 level=L3 corrected task=practice
+2026-11-11 15:24:01,939 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:02,663 INFO  stroke layer=skeleton part=eyes err=2.4px n=17 level=L3 corrected task=practice
+2026-11-11 15:24:02,667 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:03,355 INFO  stroke layer=skeleton part=nose err=1.1px n=11 level=L3 corrected task=practice
+2026-11-11 15:24:03,359 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:03,947 INFO  stroke layer=skeleton part=mouth err=1.1px n=16 level=L3 corrected task=practice
+2026-11-11 15:24:03,950 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:06,444 INFO  probe start layer=skeleton
+2026-11-11 15:24:06,448 INFO  POST /api/probe/start 200 4ms
+2026-11-11 15:24:08,777 INFO  probe_stroke layer=skeleton part=head err=9.4px n=23 level=L3 task=practice (no help)
+2026-11-11 15:24:08,781 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:09,429 INFO  probe_stroke layer=skeleton part=eyes err=2.8px n=13 level=L3 task=practice (no help)
+2026-11-11 15:24:09,432 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:10,250 INFO  probe_stroke layer=skeleton part=head err=12.2px n=12 level=L3 task=practice (no help)
+2026-11-11 15:24:10,254 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:10,914 INFO  probe_stroke layer=skeleton part=mouth err=10.7px n=17 level=L3 task=practice (no help)
+2026-11-11 15:24:10,917 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:11,618 INFO  probe layer=skeleton head:f(e=0.038,c=0.22) eyes:f(e=0.030,c=0.47) nose:f(e=0.029,c=0.34) mouth:f(e=0.032,c=0.23) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:24:11,622 INFO  POST /api/probe/submit 200 19ms
+2026-11-11 15:24:16,998 INFO  probe start layer=skeleton
+2026-11-11 15:24:17,002 INFO  POST /api/probe/start 200 4ms
+2026-11-11 15:24:22,576 INFO  probe_stroke layer=skeleton part=head err=12.5px n=42 level=L3 task=practice (no help)
+2026-11-11 15:24:22,581 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:23,792 INFO  probe_stroke layer=skeleton part=eyes err=8.0px n=23 level=L3 task=practice (no help)
+2026-11-11 15:24:23,796 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:24,626 INFO  probe_stroke layer=skeleton part=nose err=4.8px n=16 level=L3 task=practice (no help)
+2026-11-11 15:24:24,630 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:25,466 INFO  probe_stroke layer=skeleton part=mouth err=4.8px n=17 level=L3 task=practice (no help)
+2026-11-11 15:24:25,472 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:26,147 INFO  probe layer=skeleton head:f(e=0.045,c=0.19) eyes:f(e=0.036,c=0.09) nose:n(e=0.023,c=0.62) mouth:s(e=0.018,c=0.91) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:24:26,151 INFO  POST /api/probe/submit 200 21ms
+2026-11-11 15:24:30,412 INFO  probe start layer=skeleton
+2026-11-11 15:24:30,417 INFO  POST /api/probe/start 200 4ms
+2026-11-11 15:24:32,332 INFO  probe_stroke layer=skeleton part=eyes err=21.3px n=17 level=L3 task=practice (no help)
+2026-11-11 15:24:32,336 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:33,049 INFO  probe_stroke layer=skeleton part=eyes err=10.3px n=15 level=L3 task=practice (no help)
+2026-11-11 15:24:33,053 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:33,770 INFO  probe_stroke layer=skeleton part=nose err=23.3px n=9 level=L3 task=practice (no help)
+2026-11-11 15:24:33,775 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:34,797 INFO  probe_stroke layer=skeleton part=mouth err=20.1px n=15 level=L3 task=practice (no help)
+2026-11-11 15:24:34,801 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:35,498 INFO  probe layer=skeleton head:f(e=0.092,c=0.00) eyes:f(e=0.057,c=0.09) nose:f(e=0.072,c=0.00) mouth:f(e=0.069,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:24:35,500 INFO  POST /api/probe/submit 200 18ms
+2026-11-11 15:24:35,503 INFO  layer 3. contours
+2026-11-11 15:24:35,507 INFO  POST /api/layer 200 4ms
+2026-11-11 15:24:38,459 INFO  stroke layer=contours part=head err=1.0px n=12 level=L3 corrected task=practice
+2026-11-11 15:24:38,464 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:38,823 INFO  stroke layer=contours part=head err=3.3px n=8 level=L3 corrected task=practice
+2026-11-11 15:24:38,829 INFO  POST /api/stroke 200 7ms
+2026-11-11 15:24:39,382 INFO  stroke layer=contours part=head err=1.3px n=13 level=L3 corrected task=practice
+2026-11-11 15:24:39,386 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:40,007 INFO  stroke layer=contours part=head err=1.2px n=13 level=L3 corrected task=practice
+2026-11-11 15:24:40,012 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:40,701 INFO  stroke layer=contours part=head err=1.6px n=24 level=L3 corrected task=practice
+2026-11-11 15:24:40,705 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:41,021 INFO  stroke layer=contours part=head err=1.9px n=9 level=L3 corrected task=practice
+2026-11-11 15:24:41,025 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:41,362 INFO  stroke layer=contours part=head err=1.2px n=7 level=L3 corrected task=practice
+2026-11-11 15:24:41,366 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:41,652 INFO  stroke layer=contours part=head err=10.9px n=7 level=L3 corrected task=practice
+2026-11-11 15:24:41,655 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:42,131 INFO  stroke layer=contours part=eyes err=1.2px n=9 level=L3 corrected task=practice
+2026-11-11 15:24:42,135 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:42,456 INFO  stroke layer=contours part=eyes err=1.0px n=11 level=L3 corrected task=practice
+2026-11-11 15:24:42,462 INFO  POST /api/stroke 200 8ms
+2026-11-11 15:24:43,039 INFO  stroke layer=contours part=eyes err=1.4px n=19 level=L3 corrected task=practice
+2026-11-11 15:24:43,044 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:43,738 INFO  stroke layer=contours part=head err=1.0px n=17 level=L3 corrected task=practice
+2026-11-11 15:24:43,743 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:44,207 INFO  stroke layer=contours part=eyes err=2.8px n=16 level=L3 corrected task=practice
+2026-11-11 15:24:44,210 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:44,597 INFO  stroke layer=contours part=nose err=1.5px n=9 level=L3 corrected task=practice
+2026-11-11 15:24:44,601 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:44,806 INFO  stroke layer=contours part=eyes err=1.9px n=5 level=L3 corrected task=practice
+2026-11-11 15:24:44,811 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:45,363 INFO  stroke layer=contours part=nose err=2.8px n=17 level=L3 corrected task=practice
+2026-11-11 15:24:45,367 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:45,654 INFO  stroke layer=contours part=nose err=3.1px n=8 level=L3 corrected task=practice
+2026-11-11 15:24:45,659 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:46,326 INFO  stroke layer=contours part=head err=2.6px n=10 level=L3 corrected task=practice
+2026-11-11 15:24:46,331 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:46,775 INFO  stroke layer=contours part=head err=2.1px n=19 level=L3 corrected task=practice
+2026-11-11 15:24:46,780 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:47,379 INFO  stroke layer=contours part=head err=2.9px n=22 level=L3 corrected task=practice
+2026-11-11 15:24:47,383 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:47,808 INFO  stroke layer=contours part=head err=1.8px n=10 level=L3 corrected task=practice
+2026-11-11 15:24:47,812 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:48,162 INFO  stroke layer=contours part=mouth err=2.8px n=12 level=L3 corrected task=practice
+2026-11-11 15:24:48,168 INFO  POST /api/stroke 200 7ms
+2026-11-11 15:24:48,776 INFO  stroke layer=contours part=head err=1.7px n=7 level=L3 corrected task=practice
+2026-11-11 15:24:48,780 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:49,089 INFO  stroke layer=contours part=head err=1.9px n=8 level=L3 corrected task=practice
+2026-11-11 15:24:49,095 INFO  POST /api/stroke 200 7ms
+2026-11-11 15:24:49,380 INFO  stroke layer=contours part=head err=4.6px n=9 level=L3 corrected task=practice
+2026-11-11 15:24:49,383 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:49,807 INFO  stroke layer=contours part=head err=1.9px n=11 level=L3 corrected task=practice
+2026-11-11 15:24:49,811 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:50,102 INFO  stroke layer=contours part=head err=2.3px n=10 level=L3 corrected task=practice
+2026-11-11 15:24:50,107 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:50,317 INFO  stroke layer=contours part=head err=1.1px n=8 level=L3 corrected task=practice
+2026-11-11 15:24:50,321 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:50,577 INFO  stroke layer=contours part=head err=1.8px n=9 level=L3 corrected task=practice
+2026-11-11 15:24:50,581 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:51,133 INFO  stroke layer=contours part=eyes err=1.3px n=10 level=L3 corrected task=practice
+2026-11-11 15:24:51,138 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:52,786 INFO  probe start layer=contours
+2026-11-11 15:24:52,790 INFO  POST /api/probe/start 200 4ms
+2026-11-11 15:24:58,776 INFO  probe_stroke layer=contours part=head err=3.2px n=13 level=L3 task=practice (no help)
+2026-11-11 15:24:58,781 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:24:59,038 INFO  probe_stroke layer=contours part=head err=1.0px n=11 level=L3 task=practice (no help)
+2026-11-11 15:24:59,042 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:59,355 INFO  probe_stroke layer=contours part=eyes err=2.7px n=9 level=L3 task=practice (no help)
+2026-11-11 15:24:59,359 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:24:59,610 INFO  probe_stroke layer=contours part=nose err=5.3px n=13 level=L3 task=practice (no help)
+2026-11-11 15:24:59,613 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:59,767 INFO  probe_stroke layer=contours part=head err=3.7px n=4 level=L3 task=practice (no help)
+2026-11-11 15:24:59,770 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:24:59,920 INFO  probe_stroke layer=contours part=eyes err=1.5px n=5 level=L3 task=practice (no help)
+2026-11-11 15:24:59,924 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:25:00,063 INFO  probe_stroke layer=contours part=head err=30.0px n=6 level=L3 task=practice (no help)
+2026-11-11 15:25:00,068 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:25:00,498 INFO  probe_stroke layer=contours part=head err=10.3px n=21 level=L3 task=practice (no help)
+2026-11-11 15:25:00,502 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:25:00,892 INFO  probe_stroke layer=contours part=eyes err=15.2px n=10 level=L3 task=practice (no help)
+2026-11-11 15:25:00,896 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:01,371 INFO  probe layer=contours head:f(e=0.046,c=0.17) eyes:n(e=0.029,c=0.51) nose:n(e=0.015,c=0.59) mouth:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:25:01,375 INFO  POST /api/probe/submit 200 44ms
+2026-11-11 15:25:03,958 INFO  probe start layer=contours
+2026-11-11 15:25:03,963 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:25:04,378 INFO  probe layer=contours head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) mouth:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:25:04,382 INFO  POST /api/probe/submit 200 7ms
+2026-11-11 15:25:07,661 INFO  probe start layer=contours
+2026-11-11 15:25:07,666 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:25:09,437 INFO  probe_stroke layer=contours part=head err=3.1px n=12 level=L3 task=practice (no help)
+2026-11-11 15:25:09,441 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:25:09,939 INFO  probe_stroke layer=contours part=head err=2.5px n=11 level=L3 task=practice (no help)
+2026-11-11 15:25:09,943 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:10,764 INFO  probe_stroke layer=contours part=head err=8.3px n=18 level=L3 task=practice (no help)
+2026-11-11 15:25:10,768 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:11,303 INFO  probe_stroke layer=contours part=head err=1.1px n=12 level=L3 task=practice (no help)
+2026-11-11 15:25:11,307 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:13,377 INFO  probe_stroke layer=contours part=head err=6.0px n=16 level=L3 task=practice (no help)
+2026-11-11 15:25:13,381 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:13,779 INFO  probe_stroke layer=contours part=head err=7.1px n=12 level=L3 task=practice (no help)
+2026-11-11 15:25:13,783 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:25:14,090 INFO  probe_stroke layer=contours part=mouth err=2.7px n=9 level=L3 task=practice (no help)
+2026-11-11 15:25:14,095 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:25:14,390 INFO  probe_stroke layer=contours part=mouth err=20.5px n=11 level=L3 task=practice (no help)
+2026-11-11 15:25:14,394 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:25:15,167 INFO  probe_stroke layer=contours part=eyes err=2.9px n=7 level=L3 task=practice (no help)
+2026-11-11 15:25:15,172 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:25:15,449 INFO  probe_stroke layer=contours part=eyes err=2.7px n=10 level=L3 task=practice (no help)
+2026-11-11 15:25:15,453 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:15,785 INFO  probe_stroke layer=contours part=eyes err=8.3px n=11 level=L3 task=practice (no help)
+2026-11-11 15:25:15,789 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:16,173 INFO  probe_stroke layer=contours part=head err=5.3px n=9 level=L3 task=practice (no help)
+2026-11-11 15:25:16,177 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:16,624 INFO  probe_stroke layer=contours part=head err=14.4px n=18 level=L3 task=practice (no help)
+2026-11-11 15:25:16,627 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:17,127 INFO  probe_stroke layer=contours part=head err=26.1px n=23 level=L3 task=practice (no help)
+2026-11-11 15:25:17,131 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:17,750 INFO  probe_stroke layer=contours part=head err=6.0px n=26 level=L3 task=practice (no help)
+2026-11-11 15:25:17,754 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:18,329 INFO  probe layer=contours head:f(e=0.033,c=0.37) eyes:f(e=0.028,c=0.42) nose:f(e=0.023,c=0.39) mouth:f(e=0.028,c=0.46) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:25:18,333 INFO  POST /api/probe/submit 200 82ms
+2026-11-11 15:25:23,429 INFO  probe start layer=contours
+2026-11-11 15:25:23,434 INFO  POST /api/probe/start 200 4ms
+2026-11-11 15:25:26,060 INFO  probe layer=contours head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) mouth:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:25:26,065 INFO  POST /api/probe/submit 200 7ms
+2026-11-11 15:25:26,068 INFO  layer 4. shading
+2026-11-11 15:25:26,072 INFO  POST /api/layer 200 3ms
+2026-11-11 15:25:27,883 INFO  probe start layer=shading
+2026-11-11 15:25:27,886 INFO  POST /api/probe/start 200 3ms
+2026-11-11 15:25:28,617 INFO  probe layer=shading head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:25:28,621 INFO  POST /api/probe/submit 200 5ms
+2026-11-11 15:25:29,893 INFO  probe start layer=shading
+2026-11-11 15:25:29,896 INFO  POST /api/probe/start 200 4ms
+2026-11-11 15:25:30,687 INFO  probe layer=shading head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:25:30,692 INFO  POST /api/probe/submit 200 7ms
+2026-11-11 15:25:32,584 INFO  stroke layer=shading part=head err=1.1px n=58 level=L3 corrected task=practice
+2026-11-11 15:25:32,587 INFO  POST /api/stroke 200 7ms
+2026-11-11 15:25:33,181 INFO  stroke layer=shading part=head err=0.6px n=14 level=L3 corrected task=practice
+2026-11-11 15:25:33,184 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:25:33,494 INFO  stroke layer=shading part=head err=1.0px n=7 level=L3 corrected task=practice
+2026-11-11 15:25:33,498 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:33,946 INFO  stroke layer=shading part=eyes err=0.6px n=10 level=L3 corrected task=practice
+2026-11-11 15:25:33,951 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:38,519 INFO  stroke layer=shading part=head err=1.0px n=260 level=L3 corrected task=practice
+2026-11-11 15:25:38,523 INFO  POST /api/stroke 200 16ms
+2026-11-11 15:25:39,513 INFO  stroke layer=shading part=eyes err=0.8px n=43 level=L3 corrected task=practice
+2026-11-11 15:25:39,517 INFO  POST /api/stroke 200 7ms
+2026-11-11 15:25:41,799 INFO  stroke layer=shading part=head err=1.9px n=111 level=L3 corrected task=practice
+2026-11-11 15:25:41,803 INFO  POST /api/stroke 200 10ms
+2026-11-11 15:25:43,164 INFO  stroke layer=shading part=head err=1.1px n=68 level=L3 corrected task=practice
+2026-11-11 15:25:43,167 INFO  POST /api/stroke 200 7ms
+2026-11-11 15:25:45,565 INFO  probe start layer=shading
+2026-11-11 15:25:45,570 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:25:46,683 INFO  probe layer=shading head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:25:46,688 INFO  POST /api/probe/submit 200 7ms
+2026-11-11 15:25:47,955 INFO  probe start layer=shading
+2026-11-11 15:25:47,960 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:25:49,990 INFO  probe layer=shading head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:25:49,994 INFO  POST /api/probe/submit 200 6ms
+2026-11-11 15:25:51,422 INFO  probe start layer=shading
+2026-11-11 15:25:51,428 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:25:54,095 INFO  probe_stroke layer=shading part=head err=11.6px n=85 level=L3 task=practice (no help)
+2026-11-11 15:25:54,099 INFO  POST /api/stroke 200 8ms
+2026-11-11 15:25:55,047 INFO  probe_stroke layer=shading part=head err=1.0px n=34 level=L3 task=practice (no help)
+2026-11-11 15:25:55,051 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:57,972 INFO  probe_stroke layer=shading part=head err=1.9px n=161 level=L3 task=practice (no help)
+2026-11-11 15:25:57,976 INFO  POST /api/stroke 200 13ms
+2026-11-11 15:25:58,376 INFO  probe_stroke layer=shading part=eyes err=4.9px n=18 level=L3 task=practice (no help)
+2026-11-11 15:25:58,380 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:25:58,772 INFO  probe_stroke layer=shading part=head err=8.2px n=16 level=L3 task=practice (no help)
+2026-11-11 15:25:58,775 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:25:59,780 INFO  probe layer=shading head:n(e=0.024,c=0.53) eyes:f(e=0.035,c=0.29) nose:f(e=0.060,c=0.07) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:25:59,785 INFO  POST /api/probe/submit 200 72ms
+2026-11-11 15:26:00,466 INFO  probe start layer=shading
+2026-11-11 15:26:00,470 INFO  POST /api/probe/start 200 4ms
+2026-11-11 15:26:02,059 INFO  probe layer=shading head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:26:02,066 INFO  POST /api/probe/submit 200 8ms
+2026-11-11 15:26:02,699 INFO  probe start layer=shading
+2026-11-11 15:26:02,704 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:26:09,805 INFO  probe layer=shading head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:26:09,810 INFO  POST /api/probe/submit 200 6ms
+2026-11-11 15:26:18,996 INFO  probe start layer=shading
+2026-11-11 15:26:19,001 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:26:36,074 INFO  probe_stroke layer=shading part=head err=2.9px n=20 level=L3 task=practice (no help)
+2026-11-11 15:26:36,078 INFO  POST /api/stroke 200 4ms
+2026-11-11 15:26:36,622 INFO  probe layer=shading head:f(e=0.046,c=0.07) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:26:36,626 INFO  POST /api/probe/submit 200 8ms
+2026-11-11 15:26:38,258 INFO  probe start layer=shading
+2026-11-11 15:26:38,263 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:26:39,074 INFO  probe layer=shading head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:26:39,078 INFO  POST /api/probe/submit 200 6ms
+2026-11-11 15:26:46,075 INFO  probe start layer=shading
+2026-11-11 15:26:46,080 INFO  POST /api/probe/start 200 6ms
+2026-11-11 15:26:51,724 INFO  probe layer=shading head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:26:51,728 INFO  POST /api/probe/submit 200 6ms
+2026-11-11 15:26:57,556 INFO  probe start layer=shading
+2026-11-11 15:26:57,560 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:27:00,468 INFO  probe_stroke layer=shading part=head err=4.9px n=112 level=L3 task=practice (no help)
+2026-11-11 15:27:00,471 INFO  POST /api/stroke 200 9ms
+2026-11-11 15:27:01,623 INFO  probe_stroke layer=shading part=head err=3.3px n=41 level=L3 task=practice (no help)
+2026-11-11 15:27:01,626 INFO  POST /api/stroke 200 7ms
+2026-11-11 15:27:04,043 INFO  probe_stroke layer=shading part=head err=4.7px n=119 level=L3 task=practice (no help)
+2026-11-11 15:27:04,046 INFO  POST /api/stroke 200 9ms
+2026-11-11 15:27:04,711 INFO  probe_stroke layer=shading part=eyes err=4.3px n=27 level=L3 task=practice (no help)
+2026-11-11 15:27:04,715 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:27:06,067 INFO  probe_stroke layer=shading part=head err=12.0px n=54 level=L3 task=practice (no help)
+2026-11-11 15:27:06,070 INFO  POST /api/stroke 200 6ms
+2026-11-11 15:27:07,138 INFO  probe layer=shading head:f(e=0.026,c=0.45) eyes:f(e=0.029,c=0.32) nose:f(e=0.034,c=0.35) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:27:07,144 INFO  POST /api/probe/submit 200 69ms
+2026-11-11 15:35:56,075 INFO  probe start layer=shading
+2026-11-11 15:35:56,080 INFO  POST /api/probe/start 200 5ms
+2026-11-11 15:36:04,091 INFO  probe_stroke layer=shading part=head err=10.3px n=164 level=L3 task=practice (no help)
+2026-11-11 15:36:04,094 INFO  POST /api/stroke 200 11ms
+2026-11-11 15:36:06,301 INFO  probe_stroke layer=shading part=head err=10.4px n=89 level=L3 task=practice (no help)
+2026-11-11 15:36:06,306 INFO  POST /api/stroke 200 10ms
+2026-11-11 15:36:11,620 INFO  probe_stroke layer=shading part=head err=11.9px n=254 level=L3 task=practice (no help)
+2026-11-11 15:36:11,625 INFO  POST /api/stroke 200 18ms
+2026-11-11 15:36:12,999 INFO  probe_stroke layer=shading part=eyes err=3.9px n=47 level=L3 task=practice (no help)
+2026-11-11 15:36:13,003 INFO  POST /api/stroke 200 7ms
+2026-11-11 15:36:13,723 INFO  probe_stroke layer=shading part=head err=5.1px n=31 level=L3 task=practice (no help)
+2026-11-11 15:36:13,726 INFO  POST /api/stroke 200 5ms
+2026-11-11 15:36:14,360 INFO  probe layer=shading head:n(e=0.028,c=0.63) eyes:n(e=0.021,c=0.61) nose:n(e=0.018,c=0.74) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:36:14,366 INFO  POST /api/probe/submit 200 93ms
+2026-11-11 15:36:28,581 INFO  GET / (page loaded)
+2026-11-11 15:36:28,601 INFO  POST /api/packages 200 0ms
+2026-11-11 15:36:29,142 INFO  GET / (page loaded)
+2026-11-11 15:36:29,154 INFO  POST /api/packages 200 0ms
+2026-11-11 15:48:06,189 INFO  === SketchFade start, port 9177 ===
+2026-11-11 15:48:06,266 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 15:48:06,266 INFO  target source: SD + ControlNet + LCM on cpu (CPU-only torch build)
+2026-11-11 15:48:06,266 INFO  packages: 0 (0 approved)
+2026-11-11 15:48:06,266 INFO  serving on http://127.0.0.1:9177
+2026-11-11 15:48:22,729 INFO  POST /api/packages 200 0ms
+2026-11-11 15:48:28,462 INFO  pin from 5 strokes, prompt='an old man with a beard' style=anime
+2026-11-11 15:48:28,462 INFO  generating target: prompt='an old man with a beard' style=anime seed=0 ...
+2026-11-11 15:48:30,297 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 15:48:30,481 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 15:48:30,481 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 15:48:30,696 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 15:48:30,875 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 15:48:32,157 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 15:48:32,335 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 15:48:41,875 INFO  target seed 0 generated in 13.4s
+2026-11-11 15:48:42,604 INFO  target generated: landmark confidence head=0.84 eyes=0.51 nose=0.57 mouth=0.58 -> ok
+2026-11-11 15:48:42,628 INFO  POST /api/pin 200 19897ms
+2026-11-11 15:48:42,662 INFO  visible layers: block-in,contours,shading
+2026-11-11 15:48:42,694 INFO  POST /api/visible 200 33ms
+2026-11-11 15:48:42,716 INFO  visible layers: none
+2026-11-11 15:48:42,738 INFO  POST /api/visible 200 22ms
+2026-11-11 15:48:42,768 INFO  stroke layer=block-in part=head err=7.6px n=41 level=L3 task=practice
+2026-11-11 15:48:42,791 INFO  POST /api/stroke 200 25ms
+2026-11-11 15:48:42,812 INFO  layer 2. skeleton
+2026-11-11 15:48:42,837 INFO  POST /api/layer 200 25ms
+2026-11-11 15:48:42,851 INFO  visible layers: block-in,skeleton
+2026-11-11 15:48:42,879 INFO  POST /api/visible 200 28ms
+2026-11-11 15:48:42,886 INFO  stroke layer=skeleton part=head err=24.0px n=41 level=L3 corrected task=practice
+2026-11-11 15:48:42,914 INFO  POST /api/stroke 200 30ms
+2026-11-11 15:48:42,932 INFO  generating target: prompt='an old man with a beard' style=anime seed=1 ...
+2026-11-11 15:48:51,200 INFO  target seed 1 generated in 8.3s
+2026-11-11 15:48:51,269 INFO  target generated: landmark confidence head=0.76 eyes=0.85 nose=0.63 mouth=0.38 -> ok
+2026-11-11 15:48:51,290 INFO  POST /api/regenerate 200 8358ms
+2026-11-11 15:48:51,369 INFO  package saved: packages/20261111_154851_s1 (pending review)
+2026-11-11 15:48:51,369 INFO  POST /api/package/save 200 18ms
+2026-11-11 15:48:51,556 INFO  session started participant=E2E_test group=adaptive package=20261111_154851_s1 | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:48:51,581 INFO  POST /api/start 200 40ms
+2026-11-11 15:48:51,606 INFO  probe start layer=block-in
+2026-11-11 15:48:51,627 INFO  POST /api/probe/start 200 22ms
+2026-11-11 15:48:51,778 INFO  probe layer=block-in head:n(e=0.021,c=0.60) eyes:s(e=0.002,c=1.00) nose:n(e=0.018,c=0.53) mouth:f(e=0.041,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:48:51,795 INFO  POST /api/probe/submit 200 139ms
+2026-11-11 15:48:51,819 INFO  task baseline participant=E2E_test
+2026-11-11 15:48:51,841 INFO  POST /api/task 200 23ms
+2026-11-11 15:48:51,857 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 15:48:51,880 INFO  POST /api/visible 200 23ms
+2026-11-11 15:48:51,915 INFO  POST /api/summary 200 6ms
+2026-11-11 15:49:27,142 INFO  GET / (page loaded)
+2026-11-11 15:49:27,150 INFO  POST /api/packages 200 0ms
+2026-11-11 15:49:29,148 INFO  session started participant=UIshot group=adaptive package=20261111_154851_s1 | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 15:49:29,162 INFO  POST /api/start 200 16ms
+2026-11-11 15:49:30,253 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 15:49:30,287 INFO  POST /api/visible 200 35ms
+2026-11-11 15:49:31,397 INFO  visible layers: block-in,skeleton,contours,shadow
+2026-11-11 15:49:31,426 INFO  POST /api/visible 200 29ms
+2026-11-11 15:49:32,542 INFO  probe start layer=block-in
+2026-11-11 15:49:32,559 INFO  POST /api/probe/start 200 17ms
+2026-11-11 16:02:01,651 INFO  === SketchFade start, port 9100 ===
+2026-11-11 16:02:01,725 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 16:02:03,651 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 16:02:03,652 INFO  packages: 0 (0 approved)
+2026-11-11 16:02:03,652 INFO  serving on http://127.0.0.1:9100
+2026-11-11 16:02:04,245 INFO  GET / (page loaded)
+2026-11-11 16:02:04,262 INFO  POST /api/packages 200 0ms
+2026-11-11 16:02:20,233 WARNING POST /api/pin 200 15ms error=draw a rough face first
+2026-11-11 16:02:32,099 INFO  pin from 5 strokes, prompt='asian woman potrait' style=realistic
+2026-11-11 16:02:32,100 INFO  generating target: prompt='asian woman potrait' style=realistic seed=0 ...
+2026-11-11 16:02:34,577 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 16:02:34,757 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 16:02:34,757 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 16:02:35,345 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:02:35,524 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 16:02:36,163 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:02:36,354 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 16:02:41,823 INFO  target seed 0 generated in 9.7s
+2026-11-11 16:02:42,489 INFO  target generated: landmark confidence head=0.00 eyes=0.00 nose=0.00 mouth=0.00 -> NO FACE
+2026-11-11 16:02:42,490 INFO  generating target: prompt='asian woman potrait' style=realistic seed=1 ...
+2026-11-11 16:02:42,844 INFO  target seed 1 generated in 0.4s
+2026-11-11 16:02:43,044 INFO  target generated: landmark confidence head=0.27 eyes=0.44 nose=0.32 mouth=0.04 -> LOW
+2026-11-11 16:02:43,045 INFO  generating target: prompt='asian woman potrait' style=realistic seed=2 ...
+2026-11-11 16:02:43,403 INFO  target seed 2 generated in 0.4s
+2026-11-11 16:02:43,448 INFO  target generated: landmark confidence head=0.60 eyes=0.38 nose=0.68 mouth=0.71 -> ok
+2026-11-11 16:02:43,472 INFO  POST /api/pin 200 16751ms
+2026-11-11 16:03:05,536 INFO  visible layers: block-in,skeleton
+2026-11-11 16:03:05,565 INFO  POST /api/visible 200 29ms
+2026-11-11 16:03:06,293 INFO  visible layers: block-in,skeleton,contours
+2026-11-11 16:03:06,326 INFO  POST /api/visible 200 33ms
+2026-11-11 16:03:06,789 INFO  visible layers: block-in,skeleton,contours,shading
+2026-11-11 16:03:06,821 INFO  POST /api/visible 200 32ms
+2026-11-11 16:03:07,598 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:03:07,635 INFO  POST /api/visible 200 38ms
+2026-11-11 16:03:09,707 INFO  visible layers: block-in,skeleton,contours,shading
+2026-11-11 16:03:09,740 INFO  POST /api/visible 200 33ms
+2026-11-11 16:03:09,969 INFO  visible layers: block-in,skeleton,contours
+2026-11-11 16:03:10,001 INFO  POST /api/visible 200 32ms
+2026-11-11 16:03:10,232 INFO  visible layers: block-in,skeleton
+2026-11-11 16:03:10,261 INFO  POST /api/visible 200 29ms
+2026-11-11 16:03:10,547 INFO  visible layers: block-in
+2026-11-11 16:03:10,574 INFO  POST /api/visible 200 28ms
+2026-11-11 16:03:10,884 INFO  visible layers: none
+2026-11-11 16:03:10,907 INFO  POST /api/visible 200 23ms
+2026-11-11 16:03:15,869 INFO  visible layers: block-in
+2026-11-11 16:03:15,896 INFO  POST /api/visible 200 27ms
+2026-11-11 16:03:16,547 INFO  visible layers: none
+2026-11-11 16:03:16,570 INFO  POST /api/visible 200 24ms
+2026-11-11 16:03:17,024 INFO  visible layers: block-in
+2026-11-11 16:03:17,052 INFO  POST /api/visible 200 27ms
+2026-11-11 16:03:32,798 INFO  GET / (page loaded)
+2026-11-11 16:03:32,817 INFO  POST /api/packages 200 0ms
+2026-11-11 16:03:44,970 INFO  pin from 2 strokes, prompt='apple' style=realistic
+2026-11-11 16:03:44,970 INFO  generating target: prompt='apple' style=realistic seed=0 ...
+2026-11-11 16:03:45,457 INFO  target seed 0 generated in 0.5s
+2026-11-11 16:03:45,461 INFO  target generated: landmark confidence head=0.00 eyes=0.00 nose=0.00 mouth=0.00 -> NO FACE
+2026-11-11 16:03:45,462 INFO  generating target: prompt='apple' style=realistic seed=1 ...
+2026-11-11 16:03:45,817 INFO  target seed 1 generated in 0.4s
+2026-11-11 16:03:45,820 INFO  target generated: landmark confidence head=0.00 eyes=0.00 nose=0.00 mouth=0.00 -> NO FACE
+2026-11-11 16:03:45,821 INFO  generating target: prompt='apple' style=realistic seed=2 ...
+2026-11-11 16:03:46,268 INFO  target seed 2 generated in 0.4s
+2026-11-11 16:03:46,272 INFO  target generated: landmark confidence head=0.00 eyes=0.00 nose=0.00 mouth=0.00 -> NO FACE
+2026-11-11 16:03:46,272 WARNING POST /api/pin 200 4491ms error=no face found in 3 generated targets: change the sketch or the prompt
+2026-11-11 16:07:00,938 INFO  pin from 11 strokes, prompt='asian woman with short hair' style=realistic
+2026-11-11 16:07:00,938 INFO  generating target: prompt='asian woman with short hair' style=realistic seed=0 ...
+2026-11-11 16:07:01,451 INFO  target seed 0 generated in 0.5s
+2026-11-11 16:07:01,501 INFO  target generated: landmark confidence head=0.66 eyes=0.78 nose=0.29 mouth=0.94 -> ok
+2026-11-11 16:07:01,520 INFO  POST /api/pin 200 5638ms
+2026-11-11 16:07:03,441 INFO  visible layers: block-in,shadow
+2026-11-11 16:07:03,468 INFO  POST /api/visible 200 27ms
+2026-11-11 16:07:04,102 INFO  visible layers: block-in,shading,shadow
+2026-11-11 16:07:04,139 INFO  POST /api/visible 200 36ms
+2026-11-11 16:07:04,829 INFO  visible layers: block-in,contours,shading,shadow
+2026-11-11 16:07:04,871 INFO  POST /api/visible 200 42ms
+2026-11-11 16:07:06,043 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:07:06,080 INFO  POST /api/visible 200 37ms
+2026-11-11 16:07:07,315 INFO  visible layers: skeleton,contours,shading,shadow
+2026-11-11 16:07:07,352 INFO  POST /api/visible 200 38ms
+2026-11-11 16:07:07,863 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:07:07,904 INFO  POST /api/visible 200 41ms
+2026-11-11 16:07:08,224 INFO  visible layers: block-in,contours,shading,shadow
+2026-11-11 16:07:08,261 INFO  POST /api/visible 200 36ms
+2026-11-11 16:07:08,457 INFO  visible layers: block-in,shading,shadow
+2026-11-11 16:07:08,491 INFO  POST /api/visible 200 34ms
+2026-11-11 16:07:08,740 INFO  visible layers: block-in,shadow
+2026-11-11 16:07:08,770 INFO  POST /api/visible 200 30ms
+2026-11-11 16:07:09,052 INFO  visible layers: block-in
+2026-11-11 16:07:09,080 INFO  POST /api/visible 200 28ms
+2026-11-11 16:07:19,930 INFO  stroke layer=block-in part=head err=2.8px n=172 level=L3 corrected task=practice
+2026-11-11 16:07:19,953 INFO  POST /api/stroke 200 31ms
+2026-11-11 16:07:21,637 INFO  stroke layer=block-in part=nose err=0.9px n=65 level=L3 corrected task=practice
+2026-11-11 16:07:21,664 INFO  POST /api/stroke 200 30ms
+2026-11-11 16:07:22,991 INFO  stroke layer=block-in part=eyes err=1.3px n=53 level=L3 corrected task=practice
+2026-11-11 16:07:23,017 INFO  POST /api/stroke 200 29ms
+2026-11-11 16:07:24,712 INFO  stroke layer=block-in part=eyes err=0.5px n=64 level=L3 corrected task=practice
+2026-11-11 16:07:24,736 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:07:27,026 INFO  stroke layer=block-in part=mouth err=1.0px n=84 level=L3 corrected task=practice
+2026-11-11 16:07:27,055 INFO  POST /api/stroke 200 33ms
+2026-11-11 16:07:27,797 INFO  visible layers: block-in,skeleton
+2026-11-11 16:07:27,826 INFO  POST /api/visible 200 29ms
+2026-11-11 16:07:29,427 INFO  stroke layer=block-in part=nose err=5.8px n=44 level=L3 corrected task=practice
+2026-11-11 16:07:29,455 INFO  POST /api/stroke 200 31ms
+2026-11-11 16:07:30,651 INFO  stroke layer=block-in part=eyes err=4.8px n=36 level=L3 corrected task=practice
+2026-11-11 16:07:30,680 INFO  POST /api/stroke 200 32ms
+2026-11-11 16:07:31,932 INFO  stroke layer=block-in part=nose err=2.7px n=19 level=L3 corrected task=practice
+2026-11-11 16:07:31,965 INFO  POST /api/stroke 200 34ms
+2026-11-11 16:07:32,911 INFO  stroke layer=block-in part=mouth err=2.1px n=22 level=L3 corrected task=practice
+2026-11-11 16:07:32,941 INFO  POST /api/stroke 200 31ms
+2026-11-11 16:07:34,803 INFO  visible layers: block-in,skeleton,contours
+2026-11-11 16:07:34,836 INFO  POST /api/visible 200 32ms
+2026-11-11 16:07:35,413 INFO  visible layers: block-in,contours
+2026-11-11 16:07:35,444 INFO  POST /api/visible 200 30ms
+2026-11-11 16:07:36,569 INFO  visible layers: contours
+2026-11-11 16:07:36,593 INFO  POST /api/visible 200 24ms
+2026-11-11 16:07:39,037 INFO  probe start layer=block-in
+2026-11-11 16:07:39,058 INFO  POST /api/probe/start 200 21ms
+2026-11-11 16:07:45,271 INFO  probe_stroke layer=block-in part=head err=8.5px n=102 level=L3 task=practice (no help)
+2026-11-11 16:07:45,288 INFO  POST /api/stroke 200 21ms
+2026-11-11 16:07:46,251 INFO  probe_stroke layer=block-in part=eyes err=11.8px n=31 level=L3 task=practice (no help)
+2026-11-11 16:07:46,273 INFO  POST /api/stroke 200 24ms
+2026-11-11 16:07:47,258 INFO  probe_stroke layer=block-in part=eyes err=8.0px n=33 level=L3 task=practice (no help)
+2026-11-11 16:07:47,277 INFO  POST /api/stroke 200 21ms
+2026-11-11 16:07:48,265 INFO  probe_stroke layer=block-in part=nose err=4.5px n=42 level=L3 task=practice (no help)
+2026-11-11 16:07:48,286 INFO  POST /api/stroke 200 23ms
+2026-11-11 16:07:49,261 INFO  probe_stroke layer=block-in part=mouth err=3.3px n=35 level=L3 task=practice (no help)
+2026-11-11 16:07:49,280 INFO  POST /api/stroke 200 22ms
+2026-11-11 16:07:51,192 INFO  probe layer=block-in head:f(e=0.036,c=0.22) eyes:f(e=0.036,c=0.17) nose:s(e=0.015,c=0.83) mouth:s(e=0.018,c=0.86) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 16:07:51,215 INFO  POST /api/probe/submit 200 106ms
+2026-11-11 16:07:51,219 INFO  layer 2. skeleton
+2026-11-11 16:07:51,233 INFO  POST /api/layer 200 14ms
+2026-11-11 16:07:54,219 INFO  visible layers: skeleton
+2026-11-11 16:07:54,245 INFO  POST /api/visible 200 25ms
+2026-11-11 16:07:57,913 INFO  stroke layer=skeleton part=head err=0.8px n=61 level=L3 corrected task=practice
+2026-11-11 16:07:57,939 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:07:59,121 INFO  stroke layer=skeleton part=eyes err=0.7px n=36 level=L3 corrected task=practice
+2026-11-11 16:07:59,147 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:00,126 INFO  stroke layer=skeleton part=nose err=1.3px n=22 level=L3 corrected task=practice
+2026-11-11 16:08:00,152 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:00,933 INFO  stroke layer=skeleton part=mouth err=2.5px n=21 level=L3 corrected task=practice
+2026-11-11 16:08:00,959 INFO  POST /api/stroke 200 27ms
+2026-11-11 16:08:03,554 INFO  probe start layer=skeleton
+2026-11-11 16:08:03,575 INFO  POST /api/probe/start 200 21ms
+2026-11-11 16:08:06,549 INFO  probe_stroke layer=skeleton part=head err=11.1px n=47 level=L3 task=practice (no help)
+2026-11-11 16:08:06,571 INFO  POST /api/stroke 200 23ms
+2026-11-11 16:08:07,686 INFO  probe_stroke layer=skeleton part=eyes err=0.9px n=30 level=L3 task=practice (no help)
+2026-11-11 16:08:07,706 INFO  POST /api/stroke 200 21ms
+2026-11-11 16:08:08,598 INFO  probe_stroke layer=skeleton part=nose err=4.4px n=19 level=L3 task=practice (no help)
+2026-11-11 16:08:08,619 INFO  POST /api/stroke 200 22ms
+2026-11-11 16:08:10,450 INFO  probe_stroke layer=skeleton part=mouth err=8.7px n=61 level=L3 task=practice (no help)
+2026-11-11 16:08:10,473 INFO  POST /api/stroke 200 24ms
+2026-11-11 16:08:11,650 INFO  probe layer=skeleton head:f(e=0.036,c=0.31) eyes:f(e=0.030,c=0.45) nose:n(e=0.019,c=0.65) mouth:f(e=0.025,c=0.48) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 16:08:11,678 INFO  POST /api/probe/submit 200 51ms
+2026-11-11 16:08:13,074 INFO  probe start layer=skeleton
+2026-11-11 16:08:13,096 INFO  POST /api/probe/start 200 22ms
+2026-11-11 16:08:15,034 INFO  probe_stroke layer=skeleton part=head err=19.4px n=27 level=L3 task=practice (no help)
+2026-11-11 16:08:15,054 INFO  POST /api/stroke 200 21ms
+2026-11-11 16:08:16,054 INFO  probe_stroke layer=skeleton part=eyes err=7.3px n=28 level=L3 task=practice (no help)
+2026-11-11 16:08:16,074 INFO  POST /api/stroke 200 21ms
+2026-11-11 16:08:16,996 INFO  probe_stroke layer=skeleton part=mouth err=12.3px n=21 level=L3 task=practice (no help)
+2026-11-11 16:08:17,017 INFO  POST /api/stroke 200 22ms
+2026-11-11 16:08:17,976 INFO  probe_stroke layer=skeleton part=head err=18.0px n=31 level=L3 task=practice (no help)
+2026-11-11 16:08:17,996 INFO  POST /api/stroke 200 21ms
+2026-11-11 16:08:18,889 INFO  probe layer=skeleton head:f(e=0.053,c=0.20) eyes:f(e=0.038,c=0.10) nose:f(e=0.051,c=0.00) mouth:f(e=0.062,c=0.10) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 16:08:18,915 INFO  POST /api/probe/submit 200 50ms
+2026-11-11 16:08:18,920 INFO  layer 3. contours
+2026-11-11 16:08:18,955 INFO  POST /api/layer 200 35ms
+2026-11-11 16:08:20,870 INFO  visible layers: contours
+2026-11-11 16:08:20,895 INFO  POST /api/visible 200 26ms
+2026-11-11 16:08:23,002 INFO  stroke layer=contours part=head err=1.6px n=15 level=L3 corrected task=practice
+2026-11-11 16:08:23,029 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:23,603 INFO  stroke layer=contours part=head err=2.2px n=16 level=L3 corrected task=practice
+2026-11-11 16:08:23,631 INFO  POST /api/stroke 200 30ms
+2026-11-11 16:08:24,594 INFO  stroke layer=contours part=head err=2.4px n=33 level=L3 corrected task=practice
+2026-11-11 16:08:24,622 INFO  POST /api/stroke 200 30ms
+2026-11-11 16:08:25,054 INFO  stroke layer=contours part=head err=2.4px n=10 level=L3 corrected task=practice
+2026-11-11 16:08:25,082 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:26,725 INFO  stroke layer=contours part=head err=2.9px n=71 level=L3 corrected task=practice
+2026-11-11 16:08:26,757 INFO  POST /api/stroke 200 34ms
+2026-11-11 16:08:27,868 INFO  stroke layer=contours part=head err=1.7px n=22 level=L3 corrected task=practice
+2026-11-11 16:08:27,896 INFO  POST /api/stroke 200 30ms
+2026-11-11 16:08:28,263 INFO  stroke layer=contours part=head err=0.6px n=12 level=L3 corrected task=practice
+2026-11-11 16:08:28,291 INFO  POST /api/stroke 200 29ms
+2026-11-11 16:08:28,578 INFO  stroke layer=contours part=head err=1.1px n=11 level=L3 corrected task=practice
+2026-11-11 16:08:28,605 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:29,021 INFO  stroke layer=contours part=head err=1.0px n=11 level=L3 corrected task=practice
+2026-11-11 16:08:29,050 INFO  POST /api/stroke 200 29ms
+2026-11-11 16:08:29,273 INFO  stroke layer=contours part=head err=1.1px n=8 level=L3 corrected task=practice
+2026-11-11 16:08:29,300 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:29,677 INFO  stroke layer=contours part=head err=1.6px n=10 level=L3 corrected task=practice
+2026-11-11 16:08:29,705 INFO  POST /api/stroke 200 29ms
+2026-11-11 16:08:30,145 INFO  stroke layer=contours part=head err=1.4px n=15 level=L3 corrected task=practice
+2026-11-11 16:08:30,170 INFO  POST /api/stroke 200 26ms
+2026-11-11 16:08:30,467 INFO  stroke layer=contours part=head err=1.8px n=8 level=L3 corrected task=practice
+2026-11-11 16:08:30,494 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:30,675 INFO  stroke layer=contours part=head err=2.1px n=7 level=L3 corrected task=practice
+2026-11-11 16:08:30,707 INFO  POST /api/stroke 200 33ms
+2026-11-11 16:08:31,687 INFO  stroke layer=contours part=eyes err=2.2px n=35 level=L3 corrected task=practice
+2026-11-11 16:08:31,714 INFO  POST /api/stroke 200 29ms
+2026-11-11 16:08:31,974 INFO  stroke layer=contours part=eyes err=1.5px n=6 level=L3 corrected task=practice
+2026-11-11 16:08:32,006 INFO  POST /api/stroke 200 32ms
+2026-11-11 16:08:33,178 INFO  stroke layer=contours part=eyes err=2.1px n=43 level=L3 corrected task=practice
+2026-11-11 16:08:33,203 INFO  POST /api/stroke 200 27ms
+2026-11-11 16:08:33,641 INFO  stroke layer=contours part=eyes err=1.9px n=18 level=L3 corrected task=practice
+2026-11-11 16:08:33,657 INFO  POST /api/stroke 200 16ms
+2026-11-11 16:08:34,360 INFO  stroke layer=contours part=nose err=2.0px n=13 level=L3 corrected task=practice
+2026-11-11 16:08:34,386 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:34,835 INFO  stroke layer=contours part=nose err=1.6px n=12 level=L3 corrected task=practice
+2026-11-11 16:08:34,862 INFO  POST /api/stroke 200 27ms
+2026-11-11 16:08:35,396 INFO  stroke layer=contours part=nose err=1.2px n=21 level=L3 corrected task=practice
+2026-11-11 16:08:35,424 INFO  POST /api/stroke 200 29ms
+2026-11-11 16:08:35,873 INFO  stroke layer=contours part=nose err=1.5px n=13 level=L3 corrected task=practice
+2026-11-11 16:08:35,900 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:36,204 INFO  stroke layer=contours part=head err=1.9px n=7 level=L3 corrected task=practice
+2026-11-11 16:08:36,232 INFO  POST /api/stroke 200 29ms
+2026-11-11 16:08:37,238 INFO  stroke layer=contours part=mouth err=2.0px n=36 level=L3 corrected task=practice
+2026-11-11 16:08:37,264 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:37,692 INFO  stroke layer=contours part=mouth err=1.1px n=12 level=L3 corrected task=practice
+2026-11-11 16:08:37,718 INFO  POST /api/stroke 200 27ms
+2026-11-11 16:08:38,258 INFO  stroke layer=contours part=mouth err=2.5px n=18 level=L3 corrected task=practice
+2026-11-11 16:08:38,285 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:38,864 INFO  stroke layer=contours part=eyes err=1.3px n=10 level=L3 corrected task=practice
+2026-11-11 16:08:38,890 INFO  POST /api/stroke 200 27ms
+2026-11-11 16:08:39,409 INFO  stroke layer=contours part=eyes err=1.6px n=10 level=L3 corrected task=practice
+2026-11-11 16:08:39,437 INFO  POST /api/stroke 200 29ms
+2026-11-11 16:08:39,921 INFO  stroke layer=contours part=head err=2.9px n=9 level=L3 corrected task=practice
+2026-11-11 16:08:39,949 INFO  POST /api/stroke 200 28ms
+2026-11-11 16:08:40,485 INFO  stroke layer=contours part=head err=1.9px n=21 level=L3 corrected task=practice
+2026-11-11 16:08:40,514 INFO  POST /api/stroke 200 30ms
+2026-11-11 16:08:41,008 INFO  stroke layer=contours part=head err=2.3px n=11 level=L3 corrected task=practice
+2026-11-11 16:08:41,037 INFO  POST /api/stroke 200 30ms
+2026-11-11 16:09:08,595 INFO  visible layers: contours,shading
+2026-11-11 16:09:08,626 INFO  POST /api/visible 200 31ms
+2026-11-11 16:09:11,018 INFO  visible layers: contours,shading,shadow
+2026-11-11 16:09:11,051 INFO  POST /api/visible 200 34ms
+2026-11-11 16:09:14,261 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:09:14,300 INFO  POST /api/visible 200 39ms
+2026-11-11 16:09:15,759 INFO  visible layers: none
+2026-11-11 16:09:15,783 INFO  POST /api/visible 200 24ms
+2026-11-11 16:09:18,127 INFO  probe start layer=contours
+2026-11-11 16:09:18,150 INFO  POST /api/probe/start 200 23ms
+2026-11-11 16:09:19,604 INFO  probe layer=contours head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) mouth:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 16:09:19,627 INFO  POST /api/probe/submit 200 25ms
+2026-11-11 16:09:20,560 INFO  probe start layer=contours
+2026-11-11 16:09:20,582 INFO  POST /api/probe/start 200 22ms
+2026-11-11 16:09:20,911 INFO  probe layer=contours head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) mouth:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 16:09:20,934 INFO  POST /api/probe/submit 200 25ms
+2026-11-11 16:09:21,687 INFO  probe start layer=contours
+2026-11-11 16:09:21,709 INFO  POST /api/probe/start 200 22ms
+2026-11-11 16:09:22,991 INFO  probe layer=contours head:f(e=0.100,c=0.00) eyes:f(e=0.100,c=0.00) nose:f(e=0.100,c=0.00) mouth:f(e=0.100,c=0.00) | head=L3 eyes=L3 nose=L3 mouth=L3
+2026-11-11 16:09:23,015 INFO  POST /api/probe/submit 200 26ms
+2026-11-11 16:09:23,020 INFO  layer 4. shading
+2026-11-11 16:09:23,036 INFO  POST /api/layer 200 16ms
+2026-11-11 16:10:02,736 INFO  GET / (page loaded)
+2026-11-11 16:10:02,757 INFO  POST /api/packages 200 0ms
+2026-11-11 16:16:49,476 INFO  pin from 6 strokes, prompt='man face' style=realistic
+2026-11-11 16:16:49,476 INFO  generating target: prompt='man face' style=realistic seed=0 ...
+2026-11-11 16:16:49,972 INFO  target seed 0 generated in 0.5s
+2026-11-11 16:16:50,021 INFO  target generated: landmark confidence head=0.68 eyes=0.55 nose=0.85 mouth=0.72 -> ok
+2026-11-11 16:16:50,039 INFO  POST /api/pin 200 4187ms
+2026-11-11 16:16:51,902 INFO  visible layers: block-in,skeleton
+2026-11-11 16:16:51,928 INFO  POST /api/visible 200 27ms
+2026-11-11 16:16:52,268 INFO  visible layers: block-in,skeleton,contours
+2026-11-11 16:16:52,307 INFO  POST /api/visible 200 39ms
+2026-11-11 16:16:52,622 INFO  visible layers: block-in,skeleton,contours,shading
+2026-11-11 16:16:52,656 INFO  POST /api/visible 200 34ms
+2026-11-11 16:16:52,938 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:16:52,973 INFO  POST /api/visible 200 36ms
+2026-11-11 16:16:54,771 INFO  visible layers: block-in,skeleton,contours,shading
+2026-11-11 16:16:54,806 INFO  POST /api/visible 200 35ms
+2026-11-11 16:16:55,053 INFO  visible layers: block-in,skeleton,contours
+2026-11-11 16:16:55,085 INFO  POST /api/visible 200 32ms
+2026-11-11 16:16:55,252 INFO  visible layers: block-in,skeleton
+2026-11-11 16:16:55,281 INFO  POST /api/visible 200 29ms
+2026-11-11 16:16:55,638 INFO  visible layers: skeleton
+2026-11-11 16:16:55,665 INFO  POST /api/visible 200 26ms
+2026-11-11 16:16:56,059 INFO  visible layers: none
+2026-11-11 16:16:56,082 INFO  POST /api/visible 200 23ms
+2026-11-11 16:16:56,533 INFO  visible layers: contours
+2026-11-11 16:16:56,560 INFO  POST /api/visible 200 28ms
+2026-11-11 16:16:56,807 INFO  visible layers: contours,shading
+2026-11-11 16:16:56,836 INFO  POST /api/visible 200 29ms
+2026-11-11 16:16:57,808 INFO  visible layers: skeleton,contours,shading
+2026-11-11 16:16:57,841 INFO  POST /api/visible 200 33ms
+2026-11-11 16:16:58,319 INFO  visible layers: skeleton,contours,shading,shadow
+2026-11-11 16:16:58,351 INFO  POST /api/visible 200 33ms
+2026-11-11 16:17:01,674 INFO  stroke layer=block-in part=head err=7.1px n=53 level=L3 task=practice
+2026-11-11 16:17:01,708 INFO  POST /api/stroke 200 36ms
+2026-11-11 16:17:02,167 INFO  stroke layer=block-in part=eyes err=10.8px n=8 level=L3 task=practice
+2026-11-11 16:17:02,201 INFO  POST /api/stroke 200 35ms
+2026-11-11 16:17:02,429 INFO  stroke layer=block-in part=eyes err=10.4px n=6 level=L3 task=practice
+2026-11-11 16:17:02,464 INFO  POST /api/stroke 200 35ms
+2026-11-11 16:17:02,741 INFO  stroke layer=block-in part=eyes err=2.3px n=7 level=L3 task=practice
+2026-11-11 16:17:02,776 INFO  POST /api/stroke 200 36ms
+2026-11-11 16:17:03,185 INFO  stroke layer=block-in part=head err=0.5px n=8 level=L3 task=practice
+2026-11-11 16:17:03,220 INFO  POST /api/stroke 200 35ms
+2026-11-11 16:17:03,717 INFO  stroke layer=block-in part=head err=3.2px n=14 level=L3 task=practice
+2026-11-11 16:17:03,750 INFO  POST /api/stroke 200 34ms
+2026-11-11 16:17:04,354 INFO  stroke layer=block-in part=head err=1.7px n=14 level=L3 task=practice
+2026-11-11 16:17:04,387 INFO  POST /api/stroke 200 35ms
+2026-11-11 16:17:05,472 INFO  stroke layer=block-in part=nose err=2.8px n=10 level=L3 task=practice
+2026-11-11 16:17:05,505 INFO  POST /api/stroke 200 35ms
+2026-11-11 16:17:05,728 INFO  stroke layer=block-in part=nose err=5.5px n=7 level=L3 task=practice
+2026-11-11 16:17:05,759 INFO  POST /api/stroke 200 32ms
+2026-11-11 16:17:06,156 INFO  stroke layer=block-in part=nose err=4.0px n=10 level=L3 task=practice
+2026-11-11 16:17:06,190 INFO  POST /api/stroke 200 35ms
+2026-11-11 16:17:06,462 INFO  stroke layer=block-in part=mouth err=1.1px n=9 level=L3 task=practice
+2026-11-11 16:17:06,496 INFO  POST /api/stroke 200 35ms
+2026-11-11 16:17:06,934 INFO  stroke layer=block-in part=head err=8.7px n=11 level=L3 task=practice
+2026-11-11 16:17:06,978 INFO  POST /api/stroke 200 45ms
+2026-11-11 16:17:07,491 INFO  stroke layer=block-in part=mouth err=1.2px n=7 level=L3 task=practice
+2026-11-11 16:17:07,525 INFO  POST /api/stroke 200 35ms
+2026-11-11 16:17:07,713 INFO  stroke layer=block-in part=head err=1.5px n=6 level=L3 task=practice
+2026-11-11 16:17:07,747 INFO  POST /api/stroke 200 35ms
+2026-11-11 16:17:08,370 INFO  stroke layer=block-in part=eyes err=1.1px n=11 level=L3 task=practice
+2026-11-11 16:17:08,402 INFO  POST /api/stroke 200 34ms
+2026-11-11 16:17:08,650 INFO  stroke layer=block-in part=eyes err=3.1px n=8 level=L3 task=practice
+2026-11-11 16:17:08,681 INFO  POST /api/stroke 200 32ms
+2026-11-11 16:17:09,037 INFO  stroke layer=block-in part=eyes err=5.8px n=8 level=L3 task=practice
+2026-11-11 16:17:09,071 INFO  POST /api/stroke 200 35ms
+2026-11-11 16:17:11,860 INFO  stroke layer=block-in part=head err=30.0px n=30 level=L3 task=practice
+2026-11-11 16:17:11,892 INFO  POST /api/stroke 200 33ms
+2026-11-11 16:24:28,307 INFO  === SketchFade start, port 9177 ===
+2026-11-11 16:24:28,395 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 16:24:30,913 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 16:24:30,913 INFO  packages: 0 (0 approved)
+2026-11-11 16:24:30,913 INFO  serving on http://127.0.0.1:9177
+2026-11-11 16:24:31,361 INFO  POST /api/packages 200 0ms
+2026-11-11 16:24:31,883 INFO  GET / (page loaded)
+2026-11-11 16:24:31,891 INFO  POST /api/packages 200 0ms
+2026-11-11 16:24:39,243 INFO  pin from 5 strokes, prompt='a young woman with curly hair' style=realistic
+2026-11-11 16:24:39,246 INFO  generating target: prompt='a young woman with curly hair' style=realistic seed=0 ...
+2026-11-11 16:24:53,063 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 16:24:53,250 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 16:24:53,830 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:24:54,010 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 16:24:54,643 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:24:54,823 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 16:24:54,824 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 16:25:01,827 INFO  target seed 0 generated in 22.6s
+2026-11-11 16:25:03,065 INFO  target generated: landmark confidence head=0.67 eyes=0.91 nose=0.40 mouth=0.84 -> ok
+2026-11-11 16:25:03,095 INFO  POST /api/pin 200 29207ms
+2026-11-11 16:26:56,594 INFO  === SketchFade start, port 9177 ===
+2026-11-11 16:26:56,672 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 16:26:58,712 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 16:26:58,713 INFO  packages: 0 (0 approved)
+2026-11-11 16:26:58,713 INFO  serving on http://127.0.0.1:9177
+2026-11-11 16:26:59,173 INFO  POST /api/packages 200 0ms
+2026-11-11 16:26:59,697 INFO  GET / (page loaded)
+2026-11-11 16:26:59,705 INFO  POST /api/packages 200 0ms
+2026-11-11 16:27:07,279 INFO  pin from 5 strokes, prompt='a young woman with curly hair' style=realistic
+2026-11-11 16:27:07,282 INFO  generating target: prompt='a young woman with curly hair' style=realistic seed=0 ...
+2026-11-11 16:27:09,871 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 16:27:10,053 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 16:27:10,692 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:27:10,870 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 16:27:11,536 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:27:11,733 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 16:27:11,734 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 16:27:17,998 INFO  target seed 0 generated in 10.7s
+2026-11-11 16:27:19,103 INFO  target generated: landmark confidence head=0.67 eyes=0.91 nose=0.40 mouth=0.84 -> ok
+2026-11-11 16:27:19,148 INFO  POST /api/pin 200 17444ms
+2026-11-11 16:27:20,445 INFO  stroke layer=block-in part=head err=10.8px n=11 level=L3 corrected task=practice
+2026-11-11 16:27:20,480 INFO  POST /api/stroke 200 36ms
+2026-11-11 16:27:21,551 INFO  probe start layer=block-in
+2026-11-11 16:27:21,568 INFO  POST /api/probe/start 200 17ms
+2026-11-11 16:27:41,089 INFO  visible layers: none
+2026-11-11 16:27:41,108 INFO  POST /api/visible 200 19ms
+2026-11-11 16:27:41,558 INFO  visible layers: none
+2026-11-11 16:27:41,570 INFO  POST /api/visible 200 11ms
+2026-11-11 16:27:42,364 INFO  visible layers: none
+2026-11-11 16:27:42,386 INFO  POST /api/visible 200 22ms
+2026-11-11 16:27:42,999 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:27:43,031 INFO  POST /api/visible 200 33ms
+2026-11-11 16:27:48,551 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:27:48,586 INFO  POST /api/visible 200 35ms
+2026-11-11 16:27:57,121 INFO  visible layers: none
+2026-11-11 16:27:57,145 INFO  POST /api/visible 200 24ms
+2026-11-11 16:27:58,021 INFO  visible layers: none
+2026-11-11 16:27:58,044 INFO  POST /api/visible 200 23ms
+2026-11-11 16:27:58,577 INFO  visible layers: none
+2026-11-11 16:27:58,600 INFO  POST /api/visible 200 23ms
+2026-11-11 16:27:59,451 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:27:59,490 INFO  POST /api/visible 200 39ms
+2026-11-11 16:28:00,614 INFO  visible layers: block-in,contours,shading,shadow
+2026-11-11 16:28:00,647 INFO  POST /api/visible 200 34ms
+2026-11-11 16:28:00,825 INFO  visible layers: block-in,shading,shadow
+2026-11-11 16:28:00,856 INFO  POST /api/visible 200 32ms
+2026-11-11 16:28:01,230 INFO  visible layers: block-in,shadow
+2026-11-11 16:28:01,257 INFO  POST /api/visible 200 27ms
+2026-11-11 16:28:52,090 INFO  === SketchFade start, port 9100 ===
+2026-11-11 16:28:52,164 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 16:28:54,270 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 16:28:54,271 INFO  packages: 0 (0 approved)
+2026-11-11 16:28:54,271 INFO  serving on http://127.0.0.1:9100
+2026-11-11 16:28:54,724 INFO  GET / (page loaded)
+2026-11-11 16:28:54,741 INFO  POST /api/packages 200 0ms
+2026-11-11 16:29:15,002 INFO  pin from 7 strokes, prompt='man face' style=realistic
+2026-11-11 16:29:15,002 INFO  generating target: prompt='man face' style=realistic seed=0 ...
+2026-11-11 16:29:17,337 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 16:29:17,526 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 16:29:17,526 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 16:29:18,134 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:29:18,307 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 16:29:19,018 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:29:19,199 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 16:29:24,725 INFO  target seed 0 generated in 9.7s
+2026-11-11 16:29:25,413 INFO  target generated: landmark confidence head=0.00 eyes=0.00 nose=0.00 mouth=0.00 -> NO FACE
+2026-11-11 16:29:25,414 INFO  generating target: prompt='man face' style=realistic seed=1 ...
+2026-11-11 16:29:25,783 INFO  target seed 1 generated in 0.4s
+2026-11-11 16:29:25,973 INFO  target generated: landmark confidence head=0.65 eyes=0.63 nose=0.61 mouth=0.96 -> ok
+2026-11-11 16:29:25,994 INFO  POST /api/pin 200 14658ms
+2026-11-11 16:37:27,657 INFO  === SketchFade start, port 9100 ===
+2026-11-11 16:37:27,736 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 16:37:29,945 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 16:37:29,945 INFO  packages: 0 (0 approved)
+2026-11-11 16:37:29,945 INFO  serving on http://127.0.0.1:9100
+2026-11-11 16:37:30,071 INFO  GET / (page loaded)
+2026-11-11 16:37:30,090 INFO  POST /api/packages 200 0ms
+2026-11-11 16:38:01,467 INFO  pin from 8 strokes, prompt='asian woman short hair' style=realistic
+2026-11-11 16:38:01,467 INFO  generating target: prompt='asian woman short hair' style=realistic seed=0 ...
+2026-11-11 16:38:03,528 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 16:38:03,701 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 16:38:03,702 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 16:38:04,254 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:38:04,431 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 16:38:04,934 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:38:05,112 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 16:38:10,836 INFO  target seed 0 generated in 9.4s
+2026-11-11 16:38:11,533 INFO  target generated: landmark confidence head=0.39 eyes=0.98 nose=0.60 mouth=0.47 -> ok
+2026-11-11 16:38:11,559 INFO  POST /api/pin 200 15617ms
+2026-11-11 16:39:26,068 INFO  GET / (page loaded)
+2026-11-11 16:39:26,088 INFO  POST /api/packages 200 0ms
+2026-11-11 16:39:46,941 INFO  pin from 9 strokes, prompt='asian woman short hair' style=realistic
+2026-11-11 16:39:46,942 INFO  generating target: prompt='asian woman short hair' style=realistic seed=0 ...
+2026-11-11 16:39:47,499 INFO  target seed 0 generated in 0.6s
+2026-11-11 16:39:47,548 INFO  target generated: landmark confidence head=0.38 eyes=0.62 nose=0.53 mouth=0.83 -> ok
+2026-11-11 16:39:47,567 INFO  POST /api/pin 200 5324ms
+2026-11-11 16:39:56,185 INFO  visible layers: block-in,shadow
+2026-11-11 16:39:56,203 INFO  POST /api/visible 200 18ms
+2026-11-11 16:39:56,766 INFO  visible layers: block-in,shading,shadow
+2026-11-11 16:39:56,786 INFO  POST /api/visible 200 20ms
+2026-11-11 16:39:57,270 INFO  visible layers: block-in,contours,shading,shadow
+2026-11-11 16:39:57,293 INFO  POST /api/visible 200 23ms
+2026-11-11 16:39:58,159 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:39:58,187 INFO  POST /api/visible 200 28ms
+2026-11-11 16:39:59,590 INFO  visible layers: skeleton,contours,shading,shadow
+2026-11-11 16:39:59,614 INFO  POST /api/visible 200 24ms
+2026-11-11 16:40:13,550 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:40:13,576 INFO  POST /api/visible 200 27ms
+2026-11-11 16:40:13,837 INFO  visible layers: block-in,contours,shading,shadow
+2026-11-11 16:40:13,860 INFO  POST /api/visible 200 23ms
+2026-11-11 16:40:14,156 INFO  visible layers: block-in,shading,shadow
+2026-11-11 16:40:14,179 INFO  POST /api/visible 200 22ms
+2026-11-11 16:40:15,135 INFO  visible layers: block-in,shadow
+2026-11-11 16:40:15,153 INFO  POST /api/visible 200 18ms
+2026-11-11 16:40:15,829 INFO  visible layers: shadow
+2026-11-11 16:40:15,849 INFO  POST /api/visible 200 20ms
+2026-11-11 16:40:16,266 INFO  visible layers: none
+2026-11-11 16:40:16,278 INFO  POST /api/visible 200 12ms
+2026-11-11 16:43:30,861 INFO  === SketchFade start, port 9177 ===
+2026-11-11 16:43:30,935 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 16:43:33,062 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 16:43:33,062 INFO  packages: 0 (0 approved)
+2026-11-11 16:43:33,062 INFO  serving on http://127.0.0.1:9177
+2026-11-11 16:43:33,228 INFO  POST /api/packages 200 0ms
+2026-11-11 16:43:38,586 INFO  pin from 5 strokes, prompt='asian woman short hair' style=pencil
+2026-11-11 16:43:38,587 INFO  generating target: prompt='asian woman short hair' style=pencil seed=0 ...
+2026-11-11 16:43:40,884 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 16:43:41,062 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 16:43:41,062 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 16:43:41,670 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:43:41,845 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 16:43:42,619 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:43:42,797 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 16:43:47,111 INFO  GET / (page loaded)
+2026-11-11 16:43:47,131 INFO  POST /api/packages 200 0ms
+2026-11-11 16:43:48,955 INFO  target seed 0 generated in 10.4s
+2026-11-11 16:43:50,002 INFO  target generated: landmark confidence head=0.79 eyes=0.87 nose=0.57 mouth=0.93 -> ok
+2026-11-11 16:43:50,043 INFO  POST /api/pin 200 16800ms
+2026-11-11 16:45:52,753 INFO  === SketchFade start, port 9100 ===
+2026-11-11 16:45:52,832 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 16:45:54,927 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 16:45:54,927 INFO  packages: 0 (0 approved)
+2026-11-11 16:45:54,927 INFO  serving on http://127.0.0.1:9100
+2026-11-11 16:45:55,646 INFO  GET / (page loaded)
+2026-11-11 16:45:55,665 INFO  POST /api/packages 200 0ms
+2026-11-11 16:46:19,324 INFO  pin from 6 strokes, prompt='asian woman short hair' style=pencil
+2026-11-11 16:46:19,329 INFO  generating target: prompt='asian woman short hair' style=pencil seed=0 ...
+2026-11-11 16:46:21,744 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 16:46:21,923 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 16:46:22,925 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:46:23,102 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 16:46:23,863 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:46:24,036 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 16:46:24,037 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 16:46:30,098 INFO  target seed 0 generated in 10.8s
+2026-11-11 16:46:30,843 INFO  target generated: landmark confidence head=0.81 eyes=0.95 nose=0.59 mouth=0.96 -> ok
+2026-11-11 16:46:30,865 INFO  POST /api/pin 200 16265ms
+2026-11-11 16:46:40,766 INFO  visible layers: block-in,skeleton
+2026-11-11 16:46:40,787 INFO  POST /api/visible 200 22ms
+2026-11-11 16:46:41,646 INFO  visible layers: block-in,skeleton,contours
+2026-11-11 16:46:41,682 INFO  POST /api/visible 200 36ms
+2026-11-11 16:46:42,645 INFO  visible layers: block-in,skeleton,contours,shading
+2026-11-11 16:46:42,682 INFO  POST /api/visible 200 36ms
+2026-11-11 16:46:43,478 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:46:43,524 INFO  POST /api/visible 200 46ms
+2026-11-11 16:52:38,987 INFO  === SketchFade start, port 9177 ===
+2026-11-11 16:52:39,061 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 16:52:41,100 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 16:52:41,100 INFO  packages: 0 (0 approved)
+2026-11-11 16:52:41,100 INFO  serving on http://127.0.0.1:9177
+2026-11-11 16:52:41,250 INFO  POST /api/packages 200 0ms
+2026-11-11 16:52:45,826 INFO  pin from 7 strokes, prompt='a young man with short hair' style=pencil
+2026-11-11 16:52:45,827 INFO  generating target: prompt='a young man with short hair' style=pencil seed=0 ...
+2026-11-11 16:52:47,658 INFO  HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
+2026-11-11 16:52:47,837 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 16:52:48,014 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 16:52:48,014 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 16:52:48,552 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:52:48,730 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 16:52:49,388 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:52:49,567 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 16:52:55,427 INFO  target seed 0 generated in 9.6s
+2026-11-11 16:52:56,773 INFO  target generated: landmark confidence head=0.64 eyes=0.98 nose=0.78 mouth=0.96 -> ok
+2026-11-11 16:52:56,811 INFO  POST /api/pin 200 15545ms
+2026-11-11 16:52:56,829 INFO  probe start layer=block-in
+2026-11-11 16:52:56,857 INFO  POST /api/probe/start 200 28ms
+2026-11-11 16:52:57,055 INFO  probe layer=block-in head:n(e=0.015,c=0.63) eyes:f(e=0.027,c=0.39) nose:s(e=0.009,c=0.80) mouth:f(e=0.015,c=0.45) neck:s(e=0.006,c=0.97) | head=L3 eyes=L3 nose=L3 mouth=L3 neck=L3
+2026-11-11 16:52:57,076 INFO  POST /api/probe/submit 200 216ms
+2026-11-11 16:54:58,709 INFO  === SketchFade start, port 9100 ===
+2026-11-11 16:54:58,783 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 16:55:00,895 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 16:55:00,895 INFO  packages: 0 (0 approved)
+2026-11-11 16:55:00,895 INFO  serving on http://127.0.0.1:9100
+2026-11-11 16:55:01,811 INFO  GET / (page loaded)
+2026-11-11 16:55:01,829 INFO  POST /api/packages 200 0ms
+2026-11-11 16:55:33,399 INFO  pin from 14 strokes, prompt='asian woman long hair' style=pencil
+2026-11-11 16:55:33,400 INFO  generating target: prompt='asian woman long hair' style=pencil seed=0 ...
+2026-11-11 16:55:35,579 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 16:55:35,755 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 16:55:35,756 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 16:55:36,319 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:55:36,491 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 16:55:37,142 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 16:55:37,321 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 16:55:42,963 INFO  target seed 0 generated in 9.6s
+2026-11-11 16:55:43,883 INFO  target generated: landmark confidence head=0.88 eyes=0.92 nose=0.55 mouth=0.91 -> ok
+2026-11-11 16:55:43,908 INFO  POST /api/pin 200 16834ms
+2026-11-11 16:55:48,779 INFO  visible layers: block-in,contours
+2026-11-11 16:55:48,804 INFO  POST /api/visible 200 25ms
+2026-11-11 16:55:50,704 INFO  visible layers: block-in
+2026-11-11 16:55:50,724 INFO  POST /api/visible 200 20ms
+2026-11-11 16:56:11,929 INFO  visible layers: block-in,skeleton
+2026-11-11 16:56:11,952 INFO  POST /api/visible 200 23ms
+2026-11-11 16:56:13,521 INFO  visible layers: skeleton
+2026-11-11 16:56:13,542 INFO  POST /api/visible 200 21ms
+2026-11-11 16:56:15,042 INFO  visible layers: block-in,skeleton
+2026-11-11 16:56:15,065 INFO  POST /api/visible 200 23ms
+2026-11-11 16:56:15,439 INFO  visible layers: block-in,skeleton,contours
+2026-11-11 16:56:15,465 INFO  POST /api/visible 200 26ms
+2026-11-11 16:56:16,222 INFO  visible layers: block-in,contours
+2026-11-11 16:56:16,247 INFO  POST /api/visible 200 25ms
+2026-11-11 16:56:16,662 INFO  visible layers: contours
+2026-11-11 16:56:16,683 INFO  POST /api/visible 200 21ms
+2026-11-11 16:56:18,909 INFO  visible layers: contours,shading
+2026-11-11 16:56:18,933 INFO  POST /api/visible 200 24ms
+2026-11-11 16:56:19,904 INFO  visible layers: contours,shading,shadow
+2026-11-11 16:56:19,930 INFO  POST /api/visible 200 26ms
+2026-11-11 16:56:22,084 INFO  visible layers: contours,shading
+2026-11-11 16:56:22,106 INFO  POST /api/visible 200 22ms
+2026-11-11 16:56:22,313 INFO  visible layers: contours
+2026-11-11 16:56:22,340 INFO  POST /api/visible 200 27ms
+2026-11-11 16:56:22,758 INFO  visible layers: none
+2026-11-11 16:56:22,774 INFO  POST /api/visible 200 16ms
+2026-11-11 16:56:32,385 INFO  visible layers: block-in
+2026-11-11 16:56:32,405 INFO  POST /api/visible 200 20ms
+2026-11-11 16:56:32,822 INFO  visible layers: block-in,skeleton
+2026-11-11 16:56:32,846 INFO  POST /api/visible 200 24ms
+2026-11-11 16:56:33,163 INFO  visible layers: block-in,skeleton,contours
+2026-11-11 16:56:33,189 INFO  POST /api/visible 200 26ms
+2026-11-11 16:56:33,590 INFO  visible layers: block-in,skeleton,contours,shading
+2026-11-11 16:56:33,620 INFO  POST /api/visible 200 30ms
+2026-11-11 16:56:33,869 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:56:33,901 INFO  POST /api/visible 200 32ms
+2026-11-11 16:56:34,295 INFO  visible layers: block-in,skeleton,contours,shading
+2026-11-11 16:56:34,325 INFO  POST /api/visible 200 30ms
+2026-11-11 16:56:34,692 INFO  visible layers: block-in,skeleton,shading
+2026-11-11 16:56:34,719 INFO  POST /api/visible 200 27ms
+2026-11-11 16:56:34,911 INFO  visible layers: block-in,skeleton,contours,shading
+2026-11-11 16:56:34,942 INFO  POST /api/visible 200 31ms
+2026-11-11 16:56:35,277 INFO  visible layers: block-in,contours,shading
+2026-11-11 16:56:35,303 INFO  POST /api/visible 200 26ms
+2026-11-11 16:56:35,775 INFO  visible layers: block-in,contours
+2026-11-11 16:56:35,799 INFO  POST /api/visible 200 24ms
+2026-11-11 16:56:36,323 INFO  visible layers: contours
+2026-11-11 16:56:36,345 INFO  POST /api/visible 200 22ms
+2026-11-11 16:56:37,961 INFO  visible layers: block-in,contours
+2026-11-11 16:56:37,985 INFO  POST /api/visible 200 24ms
+2026-11-11 16:56:38,114 INFO  visible layers: contours
+2026-11-11 16:56:38,134 INFO  POST /api/visible 200 20ms
+2026-11-11 16:56:38,263 INFO  visible layers: block-in,contours
+2026-11-11 16:56:38,287 INFO  POST /api/visible 200 25ms
+2026-11-11 16:56:38,410 INFO  visible layers: contours
+2026-11-11 16:56:38,429 INFO  POST /api/visible 200 20ms
+2026-11-11 16:56:38,562 INFO  visible layers: block-in,contours
+2026-11-11 16:56:38,584 INFO  POST /api/visible 200 23ms
+2026-11-11 16:56:39,025 INFO  visible layers: contours
+2026-11-11 16:56:39,045 INFO  POST /api/visible 200 20ms
+2026-11-11 16:56:40,396 INFO  visible layers: none
+2026-11-11 16:56:40,411 INFO  POST /api/visible 200 16ms
+2026-11-11 16:56:42,886 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:56:42,915 INFO  POST /api/visible 200 30ms
+2026-11-11 16:56:43,506 INFO  visible layers: none
+2026-11-11 16:56:43,523 INFO  POST /api/visible 200 17ms
+2026-11-11 16:56:43,852 INFO  visible layers: none
+2026-11-11 16:56:43,868 INFO  POST /api/visible 200 16ms
+2026-11-11 16:56:44,399 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:56:44,431 INFO  POST /api/visible 200 33ms
+2026-11-11 16:56:45,295 INFO  visible layers: block-in,skeleton,contours,shading,shadow
+2026-11-11 16:56:45,327 INFO  POST /api/visible 200 32ms
+2026-11-11 17:11:23,049 INFO  === SketchFade start, port 9177 ===
+2026-11-11 17:11:23,129 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 17:11:25,343 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 17:11:25,343 INFO  packages: 0 (0 approved)
+2026-11-11 17:11:25,343 INFO  serving on http://127.0.0.1:9177
+2026-11-11 17:11:25,356 INFO  POST /api/packages 200 0ms
+2026-11-11 17:11:25,890 INFO  GET / (page loaded)
+2026-11-11 17:11:25,898 INFO  POST /api/packages 200 0ms
+2026-11-11 17:11:33,757 INFO  pin from 7 strokes, prompt='a young man with short hair' style=pencil
+2026-11-11 17:11:33,761 INFO  generating target: prompt='a young man with short hair' style=pencil seed=0 ...
+2026-11-11 17:11:36,408 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 17:11:36,591 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 17:11:37,344 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 17:11:37,521 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 17:11:38,394 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 17:11:38,570 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 17:11:38,571 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 17:11:45,221 INFO  target seed 0 generated in 11.5s
+2026-11-11 17:11:46,552 INFO  target generated: landmark confidence head=0.64 eyes=0.98 nose=0.78 mouth=0.96 -> ok
+2026-11-11 17:11:46,585 INFO  POST /api/pin 200 18691ms
+2026-11-11 17:11:46,610 INFO  package saved: packages/20261111_171146_s0 (pending review)
+2026-11-11 17:11:46,611 INFO  POST /api/package/save 200 19ms
+2026-11-11 17:11:46,620 INFO  POST /api/packages 200 7ms
+2026-11-11 17:11:46,625 INFO  package 20261111_171146_s0 approved by UI test
+2026-11-11 17:11:46,626 INFO  POST /api/package/review 200 1ms
+2026-11-11 17:11:46,636 INFO  POST /api/packages 200 7ms
+2026-11-11 17:11:46,649 INFO  session started participant=UItest group=adaptive package=20261111_171146_s0 | head=L3 eyes=L3 nose=L3 mouth=L3 neck=L3
+2026-11-11 17:11:46,668 INFO  POST /api/start 200 29ms
+2026-11-11 17:11:47,775 INFO  visible layers: placement,construction,form,tone,details
+2026-11-11 17:11:47,804 INFO  POST /api/visible 200 29ms
+2026-11-11 17:16:39,858 INFO  === SketchFade start, port 9100 ===
+2026-11-11 17:16:39,936 INFO  ShadowDraw engine ready: 2175 images (0.1s)
+2026-11-11 17:16:41,934 INFO  target source: SD + ControlNet + LCM on NVIDIA GeForce RTX 5080 Laptop GPU (16 GB)
+2026-11-11 17:16:41,935 INFO  packages: 0 (0 approved)
+2026-11-11 17:16:41,935 INFO  serving on http://127.0.0.1:9100
+2026-11-11 17:16:42,099 INFO  GET / (page loaded)
+2026-11-11 17:16:42,123 INFO  POST /api/packages 200 0ms
+2026-11-11 17:17:12,089 INFO  pin from 12 strokes, prompt='asian woman long hair' style=pencil
+2026-11-11 17:17:12,090 INFO  generating target: prompt='asian woman long hair' style=pencil seed=0 ...
+2026-11-11 17:17:14,288 INFO  HTTP Request: GET https://huggingface.co/api/models/lllyasviel/control_v11p_sd15_scribble "HTTP/1.1 200 OK"
+2026-11-11 17:17:14,471 INFO  HTTP Request: HEAD https://huggingface.co/lllyasviel/control_v11p_sd15_scribble/resolve/3564ec7b87dd706d5fc760d21c9e90bb160d1e9f/diffusion_pytorch_model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-11-11 17:17:14,472 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-11 17:17:15,064 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5 "HTTP/1.1 200 OK"
+2026-11-11 17:17:15,241 INFO  HTTP Request: GET https://huggingface.co/api/models/stable-diffusion-v1-5/stable-diffusion-v1-5/revision/main "HTTP/1.1 200 OK"
+2026-11-11 17:17:15,923 INFO  HTTP Request: GET https://huggingface.co/api/models/latent-consistency/lcm-lora-sdv1-5 "HTTP/1.1 200 OK"
+2026-11-11 17:17:16,100 INFO  HTTP Request: HEAD https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors "HTTP/1.1 302 Found"
+2026-11-11 17:17:21,398 INFO  target seed 0 generated in 9.3s
+2026-11-11 17:17:22,449 INFO  target generated: landmark confidence head=0.93 eyes=0.95 nose=0.57 mouth=0.98 -> ok
+2026-11-11 17:17:22,472 INFO  POST /api/pin 200 16317ms
+2026-11-11 17:17:27,772 INFO  visible layers: placement,construction
+2026-11-11 17:17:27,793 INFO  POST /api/visible 200 21ms
+2026-11-11 17:17:29,462 INFO  visible layers: placement,construction,tone
+2026-11-11 17:17:29,485 INFO  POST /api/visible 200 24ms
+2026-11-11 17:17:31,227 INFO  visible layers: placement,construction,tone,details
+2026-11-11 17:17:31,254 INFO  POST /api/visible 200 26ms
+2026-11-11 17:17:32,675 INFO  visible layers: placement,construction,tone
+2026-11-11 17:17:32,699 INFO  POST /api/visible 200 24ms
+2026-11-11 17:17:33,105 INFO  visible layers: placement,construction,form,tone
+2026-11-11 17:17:33,132 INFO  POST /api/visible 200 27ms
+2026-11-11 17:17:37,337 INFO  visible layers: placement,construction,tone
+2026-11-11 17:17:37,362 INFO  POST /api/visible 200 24ms
+2026-11-11 17:17:41,588 INFO  visible layers: placement,construction,form,tone
+2026-11-11 17:17:41,615 INFO  POST /api/visible 200 27ms
+2026-11-11 17:17:42,560 INFO  visible layers: placement,construction,form,tone,details
+2026-11-11 17:17:42,590 INFO  POST /api/visible 200 29ms

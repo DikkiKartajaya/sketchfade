@@ -42,8 +42,15 @@ scp -r user@gpu-server:~/sketchfade/app/{sessions,participants,exports,packages,
 ```
 
 On a laptop without a GPU, `python server.py` (or double-click `run.bat`) still
-works: generation takes about a minute on a CPU, and without `diffusers`/`peft`
-the app uses the ShadowDraw retrieval face as target (no shading layer).
+works: generation takes about 10 s per seed on a CPU, and without
+`diffusers`/`peft` the app uses the ShadowDraw retrieval face as target (no
+shading or shadow layer).
+
+**Device.** `generate.device()` picks a CUDA GPU when it has at least
+`MIN_VRAM_GB` (4 GB) and the installed torch build can run on it, else Apple
+MPS, else the CPU; the startup log says which and why. On Windows, `run.bat`
+replaces a CPU-only torch with the CUDA build (`cu130`) once when it finds
+`nvidia-smi`.
 
 ## 1 · Prepare targets (B, before recruitment)
 
@@ -51,11 +58,11 @@ Each step of the proposal's pipeline, and where it lives:
 
 | Step | Code | What happens |
 |---|---|---|
-| Input | UI *Prepare targets* or `prepare.py` | rough sketch + prompt + recorded seed |
-| Target generation | `generate.py` | SD 1.5 + ControlNet scribble + LCM-LoRA, 4 steps, pretrained only |
-| Target validation | `ghost.find_landmarks` | eye line + eye centers, nose, mouth, head outline, each with a confidence; weakest < `CONF_MIN` → next seed (up to 3 in the UI) |
-| Guide construction | `ghost.build_layers` | part masks and `block-in` → `skeleton` → `contours` → `shading`, placed on the landmarks |
-| Expert review | `package.py review` | illustrator checks order and difficulty; approve or reject |
+| Input | UI *Prepare targets* or `prepare.py` | rough sketch + prompt + drawing style (`pencil` by default, `realistic` photo, `anime`) + recorded seed; the sketch strokes are logged (`pin` event) |
+| Target generation | `generate.py` | SD 1.5 + ControlNet scribble + LCM-LoRA, 4 steps, pretrained only; the style only changes the prompt. The sketch sets the layout only (ControlNet 0.5 for the first half of the steps, CFG 1.5 + negative prompt): at full strength the head outline became a hood or mask around the face |
+| Target validation | `ghost.generated_layers` | MediaPipe face landmarks (478 points) of the generated image; per part, the share of its landmark outline lying on an image edge; no face or weakest < `CONF_MIN` → next seed (up to 3 in the UI) |
+| Guide construction | `ghost.generated_layers` | The figure (face + hair, neck + shoulders) comes from MediaPipe's multiclass selfie segmenter (16 MB); when it misses a stylized drawing, from what differs from the background, split at the chin. `block-in` (cranium circle over the skull and hair, face ellipse, eyes, lips, nose wedge, neck and shoulders as straight lines) → `skeleton` (axis from the top of the skull to the base of the neck, eye/nose/mouth lines and the shoulder line, along the face's tilt) → `contours` (the image's own edges around the figure) → `shading` (mid tones) → `shadow` (darkest tones; dark hair is one mass), labeled by part: `head` (with hair), `eyes`, `nose`, `mouth`, `neck` (with shoulders) |
+| Expert review | UI *Prepare targets → Expert review* or `package.py review` | illustrator checks order and difficulty; approve or reject (with the reviewer's name) |
 | Frozen package | `packages/<id>/` | `layers.npz`, `target.png`, `guides.png` (reviewer sheet), `meta.json` |
 
 Only **approved** packages can be opened in a study session, and a package is
@@ -63,10 +70,15 @@ never regenerated. Use one package for practice and baseline/post/retention,
 and an **unseen** package for the transfer test.
 
 **Calibrate `CONF_MIN` on the GPU.** The current value (0.20) was set on
-ShadowDraw database faces, where it rejects about 12 %. Generated targets have
-denser edges, so run `python prepare.py --dry-run ...` on the GPU server during
-the pilot, look at the printed confidence distribution and at a few
-`guides.png` sheets, and adjust `CONF_MIN` in `ghost.py`.
+ShadowDraw database faces, where it rejects about 12 %. Generated targets use
+the landmark-on-edge confidence above (a few test targets scored 0.5–0.99 per
+part), so run `python prepare.py --dry-run ...` on the GPU server during the
+pilot, look at the printed confidence distribution and at a few `guides.png`
+sheets, and adjust `CONF_MIN` in `ghost.py`. Packages saved before the
+`shadow` layer existed (4 layers) cannot be opened; prepare them again.
+
+The ShadowDraw shadow under the rough sketch (a blend of candidate faces) is
+off for now (`SHADOWDRAW` in `static/index.html`).
 
 ## 2 · Study session (A)
 
@@ -83,9 +95,18 @@ and the per-part levels stored in `participants/<id>.json`.
 | L1 On request | nothing; **Check** shows it at 0.60 for 2 s | `CHECK_ALPHA`, `CHECK_MS` |
 | L0 Independent | only the side reference | |
 
-The **side reference** (small image beside the canvas) shows the current
-construction step at every level, in probes and in tests; it is the drawing
-prompt, not an overlay.
+The **Layers panel** beside the canvas (after Chen et al. 2025, *Interactive
+Drawing Guidance for Anime Illustrations with Diffusion Model*, which puts
+guidance sketches beside the canvas and lets the user place one on the
+canvas background) shows every construction layer as a thumbnail. Ticking a
+layer shows it on the canvas, unticking hides it; *Show all* and *Clear
+background* do all at once. Visible layers stack, each in its own color, and
+each is drawn at the part's help level above (so L1/L0 parts stay hidden).
+Moving to a layer shows it; L3 correction only pulls toward the current layer
+while it is shown. Every change is logged (`visible` event).
+
+In probes and tests the panel is replaced by the **side reference**, which
+shows the step to draw; it is the drawing prompt, not an overlay.
 
 The fixed group stays at L3 for every part. Both groups start at L3.
 
@@ -100,7 +121,7 @@ scores each part of the probed layer:
   their nearest guide pixel) and guide → drawn, each point capped at 30 px, as a
   fraction of the 300 px frame;
 - **coverage:** share of the part's guide pixels with a drawn pixel within 6 px;
-- filled layers (shading) are judged by their outline.
+- filled layers (shading, shadow) are judged by their outline.
 
 | Outcome | Rule |
 |---|---|
@@ -130,11 +151,12 @@ only see the codes.
 | `event` | Extra fields |
 |---|---|
 | `session_start`, `task`, `layer` | `levels` |
-| `stroke`, `probe_stroke` | `part`, `level`, `err_px`, `helped`, `corrected`, `w`, `raw` points, `shown` (corrected) points |
+| `visible` | `visible` (layers shown on the canvas) |
+| `stroke`, `probe_stroke` | `part`, `level`, `err_px`, `helped`, `corrected`, `w`, `raw` points, `shown` (corrected) points, `visible` |
 | `check` | `reveals` |
 | `probe_start`, `probe` | `probe_layer`, per-part `results` (`err`, `cov`, `outcome`), `levels_before`, `levels_after`, `changes`, `strokes` |
 | `export` | blinded `code` |
-| `target`, `package_saved` | prepare mode (`sessions/_prepare.jsonl`): source, seed, prompt, landmark confidence |
+| `pin`, `target`, `package_saved` | prepare mode (`sessions/_prepare.jsonl`): rough sketch `strokes` (points in 480 space, pen width), prompt, style, source, seed, landmark confidence |
 
 `logs/sketchfade.log` has the same in readable form plus every request and
 the full traceback of any server error:
@@ -155,8 +177,8 @@ All `POST`, JSON, points in 480×480 canvas space; see the docstring of
 
 | File | Role |
 |---|---|
-| `generate.py` | B: sketch + prompt → hidden target (SD + ControlNet + LCM) |
-| `ghost.py` | B: landmarks + confidence check, 4 labeled construction layers |
+| `generate.py` | B: sketch + prompt + style → hidden target (SD + ControlNet + LCM), device choice |
+| `ghost.py` | B: face landmarks + confidence check, 5 labeled construction layers |
 | `package.py` | B: frozen guide packages, expert review CLI |
 | `prepare.py` | B: batch-generate and validate study targets on the GPU |
 | `fading.py` | A: probe scoring (two-way error + coverage), levels L3–L0, controller |
@@ -165,8 +187,10 @@ All `POST`, JSON, points in 480×480 canvas space; see the docstring of
 
 ## Simplifications (next steps)
 
-- Landmarks come from edge profiles of the target, not a trained face-landmark
-  model; the confidence check is a heuristic to calibrate in the pilot.
-- Layers come from simple image processing (edges, blurred tone), not SAM.
+- Retrieval targets (no generator) still use landmarks from edge profiles; the
+  confidence check is a heuristic to calibrate in the pilot.
+- Contours and tone layers come from simple image processing (edges, blurred
+  tone inside the segmented figure), not SAM. The neck part is not validated
+  (a target may be cropped at the chin).
 - Faces only (the layout comes from the face database).
 - One session at a time per server.

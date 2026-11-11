@@ -3,10 +3,10 @@
 A package is one validated target with its construction layers, saved once and
 never regenerated, so every participant in both groups sees the same guides.
 
-  packages/<id>/layers.npz   (4, 300, 300) int8 label images
+  packages/<id>/layers.npz   (5, 300, 300) int8 label images
   packages/<id>/target.png   the hidden target (for the reviewer, never shown)
-  packages/<id>/guides.png   all four layers side by side (for the reviewer)
-  packages/<id>/meta.json    prompt, seed, source, landmark confidence, review
+  packages/<id>/guides.png   all five layers side by side (for the reviewer)
+  packages/<id>/meta.json    prompt, style, seed, source, landmark confidence, review
 
 Expert review (an illustrator checks layer order and difficulty):
 
@@ -27,7 +27,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "packages")
-COLORS = [(40, 60, 140), (200, 90, 40), (40, 140, 90), (150, 50, 140)]  # per part
+COLORS = [(40, 60, 140), (200, 90, 40), (40, 140, 90), (150, 50, 140), (150, 120, 30)]  # per part
 
 
 def _dir(pid):
@@ -37,7 +37,7 @@ def _dir(pid):
 
 
 def _sheet(layers):
-    """Reviewer sheet: the four layers left to right, colored by part."""
+    """Reviewer sheet: the layers left to right, colored by part."""
     n, h, w = layers.shape
     img = np.full((h, w * n, 3), 247, np.uint8)
     for k in range(n):

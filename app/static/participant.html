@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>SketchFade</title>
+<!--
+  Participant view (tablet). Same server, API and logs as the researcher app (/).
+  The researcher sets up the session once (participant, group, package, task);
+  the participant then only sees a large canvas, one instruction per step and one
+  main button. Levels, groups, packages and logs stay in the researcher app.
+-->
+<style>
+  :root { --ink: #22304f; --accent: #3b4d8f; --warm: #a83a1e; --bg: #efebe2;
+          --paper: #fbf8f1; --line: #d8cfbd; --muted: #7d7464; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+               font-family: "Segoe UI", system-ui, sans-serif; -webkit-user-select: none; user-select: none; }
+  button { font: inherit; border: 0; border-radius: 14px; cursor: pointer; touch-action: manipulation; }
+  button:disabled { opacity: .35; cursor: default; }
+  .hidden { display: none !important; }
+
+  /* --- researcher setup --- */
+  #setup { max-width: 460px; margin: 6vh auto; padding: 28px; background: var(--paper);
+           border-radius: 18px; box-shadow: 0 8px 30px rgba(40,30,10,.12); }
+  #setup h1 { margin: 0 0 4px; font-size: 26px; }
+  #setup p { margin: 0 0 18px; color: var(--muted); }
+  #setup label { display: block; margin: 12px 0 4px; font-weight: 600; font-size: 14px; }
+  #setup input, #setup select { width: 100%; padding: 11px; font-size: 16px; border: 1px solid var(--line);
+                                border-radius: 10px; background: #fff; }
+  #setup .go { width: 100%; margin-top: 22px; padding: 15px; font-size: 18px; font-weight: 600;
+               background: var(--accent); color: #fff; }
+  #setupMsg { margin-top: 12px; color: var(--warm); min-height: 20px; }
+
+  /* --- participant view --- */
+  #app { height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+  header { display: flex; align-items: center; gap: 18px; padding: 14px 22px 8px; }
+  #steps { display: flex; gap: 8px; }
+  .dot { width: 34px; height: 8px; border-radius: 4px; background: var(--line); }
+  .dot.done { background: var(--accent); }
+  .dot.now { background: var(--warm); }
+  #stepName { font-size: 15px; color: var(--muted); }
+  #gear { margin-left: auto; background: none; color: var(--muted); font-size: 22px; padding: 6px 10px; }
+
+  main { display: flex; justify-content: center; align-items: flex-start; gap: 22px; padding: 4px 22px; min-height: 0; }
+  #board { position: relative; width: var(--size, 520px); height: var(--size, 520px); background: #fffdf8;
+           border-radius: 16px; box-shadow: 0 8px 28px rgba(40,30,10,.14); touch-action: none; flex: none; }
+  #board img, #board canvas { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 16px; }
+  #side { width: 300px; display: flex; flex-direction: column; gap: 16px; }
+  #task { font-size: 24px; font-weight: 700; line-height: 1.25; margin: 0; }
+  #hint { font-size: 17px; line-height: 1.45; margin: 0; color: #3d4560; }
+  #refCard { background: var(--paper); border-radius: 14px; padding: 10px; }
+  #refCard img { width: 100%; aspect-ratio: 1; display: block; }
+  #refCard div { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  #note { min-height: 48px; font-size: 16px; padding: 12px 14px; border-radius: 12px; background: #e6ecf7;
+          color: var(--ink); }
+  #note:empty { visibility: hidden; }
+
+  footer { display: flex; justify-content: center; align-items: center; gap: 12px; padding: 12px 22px 20px; }
+  .tool { padding: 14px 20px; font-size: 17px; background: var(--paper); color: var(--ink);
+          box-shadow: 0 2px 6px rgba(40,30,10,.1); }
+  #pens { display: flex; gap: 6px; background: var(--paper); padding: 6px; border-radius: 14px; }
+  .pen { width: 46px; height: 46px; background: none; display: grid; place-items: center; }
+  .pen.on { background: #e6ecf7; }
+  .pen i { display: block; background: var(--ink); border-radius: 50%; }
+  #main { padding: 16px 30px; font-size: 19px; font-weight: 700; background: var(--accent); color: #fff;
+          box-shadow: 0 4px 12px rgba(59,77,143,.35); min-width: 250px; }
+  #main.warm { background: var(--warm); box-shadow: 0 4px 12px rgba(168,58,30,.3); }
+
+  /* full-screen messages between steps */
+  #cover { position: fixed; inset: 0; background: rgba(239,235,226,.96); display: grid; place-items: center; }
+  #coverCard { max-width: 520px; text-align: center; padding: 30px; }
+  #coverTitle { font-size: 30px; font-weight: 700; margin: 0 0 12px; }
+  #coverText { font-size: 18px; line-height: 1.5; margin: 0 0 26px; color: #3d4560; }
+  #coverBtns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  #coverBtns button { padding: 15px 28px; font-size: 18px; font-weight: 600; background: var(--accent); color: #fff; }
+  #coverBtns button.alt { background: var(--paper); color: var(--ink); }
+  #wait { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(239,235,226,.6);
+          font-size: 20px; }
+</style>
+</head>
+<body>
+
+<!-- researcher setup: filled once, before handing over the tablet -->
+<div id="setup">
+  <h1>SketchFade</h1>
+  <p>Researcher setup. Hand the tablet to the participant after Start.</p>
+  <label for="pid">Participant ID</label>
+  <input id="pid" placeholder="e.g. P01" autocomplete="off">
+  <label for="group">Group</label>
+  <select id="group"><option>adaptive</option><option>fixed</option></select>
+  <label for="pkg">Portrait (approved package)</label>
+  <select id="pkg"></select>
+  <label for="taskSel">Task</label>
+  <select id="taskSel">
+    <option value="practice">Practice (with help)</option>
+    <option value="baseline">Baseline test</option>
+    <option value="post">Immediate post-test</option>
+    <option value="retention">Delayed retention test (Day 7)</option>
+    <option value="transfer">Unseen portrait (transfer)</option>
+  </select>
+  <button class="go" id="go">Start</button>
+  <div id="setupMsg"></div>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <div id="steps"></div>
+    <div id="stepName"></div>
+    <button id="gear" title="Researcher setup">&#9881;</button>
+  </header>
+  <main>
+    <div id="board">
+      <img id="ghost" alt="">
+      <canvas id="ink"></canvas>
+    </div>
+    <div id="side">
+      <h2 id="task"></h2>
+      <p id="hint"></p>
+      <div id="refCard"><img id="ref" alt=""><div>The step to draw</div></div>
+      <div id="note"></div>
+    </div>
+  </main>
+  <footer>
+    <button class="tool" id="undo">&#8630; Undo</button>
+    <button class="tool" id="clear">Clear</button>
+    <div id="pens" title="Pen size"></div>
+    <button class="tool" id="check">Show me</button>
+    <button id="main"></button>
+  </footer>
+</div>
+
+<div id="cover" class="hidden">
+  <div id="coverCard">
+    <p id="coverTitle"></p>
+    <p id="coverText"></p>
+    <div id="coverBtns"></div>
+  </div>
+</div>
+<div id="wait" class="hidden">One moment&hellip;</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const UI = 480;                      // drawing space of the API and the logs
+const CHECK_MS = 2000;
+const PREV_INK = "rgba(34, 48, 79, 0.33)";
+const PENS = [2, 3, 6];
+
+// What each construction step asks for, in plain words (keyed by layer name).
+const STEP = {
+  "block-in": ["Big shapes", "Sketch the big, simple shapes: the head, the eyes, the nose, the mouth and the neck."],
+  "skeleton": ["Guide lines", "Add the guide lines: the centre line, and the lines for the eyes, nose, mouth and shoulders."],
+  "contours": ["Outlines", "Draw the outlines of the face, the hair and the features. Follow the shapes you placed."],
+  "shading":  ["Soft shading", "Add soft shading where the face turns away from the light."],
+  "shadow":   ["Dark areas", "Fill in the darkest areas, like the hair and the deepest shadows."],
+};
+const PART = { head: "the head", eyes: "the eyes", nose: "the nose", mouth: "the mouth", neck: "the neck" };
+const TESTS = { baseline: "Baseline drawing", post: "Drawing check", retention: "Drawing check",
+                transfer: "New portrait" };
+
+let st = null;               // last server state
+let phase = "practice";      // practice | probe | test
+let strokes = [], practice = [], byLayer = {}, cur = null;
+let pen = 3, penSeen = false;
+
+async function post(url, body = {}) {
+  try {
+    const r = await fetch(url, { method: "POST", body: JSON.stringify(body) });
+    return await r.json();
+  } catch (e) { return { error: "The drawing server is not reachable." }; }
+}
+const png = b => b ? "data:image/png;base64," + b : "";
+function busy(on) { $("wait").classList.toggle("hidden", !on); }
+
+// --- canvas -------------------------------------------------------------------
+const ink = $("ink"), ctx = ink.getContext("2d");
+function layout() {  // square board as large as the screen allows
+  const side = window.innerWidth > 900 ? 344 : 0;
+  const size = Math.max(320, Math.min(window.innerHeight - 190, window.innerWidth - side - 60, 760));
+  document.documentElement.style.setProperty("--size", size + "px");
+  ink.width = ink.height = Math.round(size * devicePixelRatio);
+  redraw();
+}
+window.addEventListener("resize", layout);
+
+function redraw() {
+  const k = ink.width / UI;
+  ctx.setTransform(k, 0, 0, k, 0, 0);
+  ctx.clearRect(0, 0, UI, UI);
+  ctx.lineCap = ctx.lineJoin = "round";
+  const draw = (list, color) => {
+    ctx.strokeStyle = color;
+    for (const s of list) {
+      ctx.lineWidth = s.w;
+      ctx.beginPath();
+      s.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+      ctx.stroke();
+    }
+  };
+  if (phase === "practice" && st)  // earlier steps stay under the current one
+    for (const [i, list] of Object.entries(byLayer)) if (+i !== st.layer) draw(list, PREV_INK);
+  draw(strokes.concat(cur ? [cur] : []), "#22304f");
+}
+
+const pos = e => {
+  const b = ink.getBoundingClientRect();
+  return [(e.clientX - b.left) * UI / b.width, (e.clientY - b.top) * UI / b.height];
+};
+ink.onpointerdown = e => {
+  if (e.pointerType === "pen") penSeen = true;
+  if (penSeen && e.pointerType === "touch") return;   // palm rejection once a stylus is used
+  ink.setPointerCapture(e.pointerId);
+  cur = { pts: [pos(e)], w: pen };
+};
+ink.onpointermove = e => { if (cur) { cur.pts.push(pos(e)); redraw(); } };
+ink.onpointerup = ink.onpointercancel = async () => {
+  if (!cur) return;
+  const s = cur; cur = null;
+  if (s.pts.length < 2) return redraw();
+  strokes.push(s); redraw(); updateButtons();
+  const r = await post("/api/stroke", { pts: s.pts, w: s.w });
+  if (r.error) return note(r.error);
+  s.pts = r.pts; st = r; redraw(); paintGuides();   // L3: the stroke may be gently corrected
+};
+
+// --- screen -------------------------------------------------------------------
+function note(t) { $("note").textContent = t || ""; }
+function paintGuides() {
+  $("ghost").src = png(st.ghost);
+  $("ref").src = png(st.ref);
+}
+function render() {
+  const names = st.layers, i = st.probe !== null ? st.probe : st.layer;
+  const [title, hint] = STEP[names[i]] || [names[i], ""];
+  $("steps").innerHTML = phase === "test" ? "" : names.map((_, k) =>
+    `<div class="dot ${k < i ? "done" : k === i ? "now" : ""}"></div>`).join("");
+  $("stepName").textContent = phase === "test" ? "" : `Step ${i + 1} of ${names.length} · ${title}`;
+  if (phase === "practice") {
+    $("task").textContent = title;
+    $("hint").textContent = hint + " The faint guide shows where. Press Done when the step looks right to you.";
+    $("main").textContent = "Done with this step →";
+    $("main").className = "";
+  } else if (phase === "probe") {
+    $("task").textContent = "Now on your own";
+    $("hint").textContent = `Draw the same step again on the empty page, without the guide on top. Use the small picture: ${hint.charAt(0).toLowerCase() + hint.slice(1)}`;
+    $("main").textContent = "Done";
+    $("main").className = "warm";
+  } else {
+    $("task").textContent = TESTS[st.task] || "Drawing";
+    $("hint").textContent = "Draw the portrait on your own, as well as you can. There is no help in this part. Take your time.";
+    $("main").textContent = "I'm finished";
+    $("main").className = "warm";
+  }
+  $("refCard").classList.toggle("hidden", phase === "practice");  // guide is on the canvas in practice
+  paintGuides();
+  updateButtons();
+  redraw();
+}
+function updateButtons() {
+  const anyL1 = st && st.helped && st.levels.some(p => p.level === 1);
+  $("check").classList.toggle("hidden", !(phase === "practice" && anyL1));
+  $("undo").disabled = !strokes.length;
+  $("clear").disabled = !strokes.length;
+  $("main").disabled = phase !== "practice" && !strokes.length;
+}
+$("pens").innerHTML = PENS.map(w =>
+  `<button class="pen${w === pen ? " on" : ""}" data-w="${w}"><i style="width:${w * 3}px;height:${w * 3}px"></i></button>`).join("");
+$("pens").onclick = e => {
+  const b = e.target.closest("[data-w]"); if (!b) return;
+  pen = +b.dataset.w;
+  document.querySelectorAll(".pen").forEach(x => x.classList.toggle("on", x === b));
+};
+
+function cover(title, text, buttons) {
+  $("coverTitle").textContent = title;
+  $("coverText").textContent = text;
+  $("coverBtns").innerHTML = "";
+  for (const [label, fn, alt] of buttons) {
+    const b = document.createElement("button");
+    b.textContent = label; if (alt) b.className = "alt";
+    b.onclick = () => { $("cover").classList.add("hidden"); fn && fn(); };
+    $("coverBtns").appendChild(b);
+  }
+  $("cover").classList.remove("hidden");
+}
+
+// --- actions ------------------------------------------------------------------
+$("undo").onclick = () => { strokes.pop(); redraw(); updateButtons(); };  // canvas only; the log keeps every stroke
+$("clear").onclick = () => { strokes = []; redraw(); updateButtons(); };
+$("check").onclick = async () => {
+  const r = await post("/api/check"); if (r.error) return;
+  $("ghost").src = png(r.ghost);
+  setTimeout(() => { $("ghost").src = png(st.ghost); }, CHECK_MS);
+};
+
+$("main").onclick = async () => {
+  if (phase === "practice") {             // end of a step: unassisted redraw
+    cover("Now on your own",
+          "The page will be empty and the guide hidden. Draw this step again on your own, looking only at the small picture.",
+          [["OK, start", startProbe]]);
+  } else if (phase === "probe") {
+    await submitProbe();
+  } else {
+    await finishTest();
+  }
+};
+
+async function startProbe() {
+  practice = strokes; strokes = [];
+  const r = await post("/api/probe/start");
+  if (r.error) { strokes = practice; return note(r.error); }
+  st = r; phase = "probe"; note(""); render();
+}
+
+async function submitProbe() {
+  busy(true);
+  const r = await post("/api/probe/submit", { strokes });
+  busy(false);
+  if (r.error) return note(r.error);
+  st = r; phase = "practice";
+  strokes = practice; practice = [];
+  const less = r.changes.filter(c => c.to < c.from).map(c => PART[c.part] || c.part);
+  const more = r.changes.filter(c => c.to > c.from).map(c => PART[c.part] || c.part);
+  const msg = [less.length ? `Well done: you get less help with ${less.join(", ")} from now on.` : "",
+               more.length ? `Help with ${more.join(", ")} is back for a while.` : ""].join(" ").trim();
+  const next = st.layer + 1;
+  if (next < st.layers.length) {
+    byLayer[st.layer] = strokes;
+    strokes = byLayer[next] || [];
+    st = await post("/api/layer", { layer: next });
+    render();
+    note(msg || "Saved. On to the next step.");
+  } else {
+    byLayer[st.layer] = strokes;
+    render();
+    cover("All steps done",
+          (msg ? msg + " " : "") + "You finished every step of this portrait. You can practise it once more from the start.",
+          [["Practise again", restartPractice], ["Stop here", () => note("Please tell the researcher you are done."), true]]);
+  }
+}
+
+async function restartPractice() {
+  byLayer = {}; strokes = []; practice = [];
+  st = await post("/api/layer", { layer: 0 });
+  phase = "practice"; render(); note("");
+}
+
+async function finishTest() {
+  busy(true);
+  const r = await post("/api/export", { strokes });
+  busy(false);
+  if (r.error) return note(r.error);
+  strokes = []; redraw();
+  cover("Thank you", "Your drawing is saved. Please hand the tablet back to the researcher.",
+        [["OK", () => { $("app").classList.add("hidden"); $("setup").classList.remove("hidden"); }]]);
+}
+
+// --- researcher setup ---------------------------------------------------------
+async function loadPackages() {
+  const r = await post("/api/packages");
+  const ok = (r.packages || []).filter(m => m.review.status === "approved").reverse();
+  $("pkg").innerHTML = ok.length
+    ? ok.map(m => `<option value="${m.id}">${m.prompt || m.id} (${m.id})</option>`).join("")
+    : `<option value="">No approved portrait yet: prepare one in the researcher app</option>`;
+  $("go").disabled = !ok.length;
+}
+$("go").onclick = async () => {
+  $("setupMsg").textContent = "";
+  let r = await post("/api/start", { participant: $("pid").value, group: $("group").value,
+                                    package: $("pkg").value });
+  if (r.error) return void ($("setupMsg").textContent = r.error);
+  if ($("taskSel").value !== "practice") {
+    r = await post("/api/task", { task: $("taskSel").value });
+    if (r.error) return void ($("setupMsg").textContent = r.error);
+  }
+  st = r; byLayer = {}; strokes = []; practice = [];
+  phase = st.task === "practice" ? "practice" : "test";
+  $("setup").classList.add("hidden"); $("app").classList.remove("hidden");
+  layout(); render(); note("");
+  if (phase === "practice")
+    cover("Let's draw a portrait", "You will build the face step by step, from big shapes to details. "
+          + "A faint guide helps you; it fades as you improve. After each step you redraw it once on your own.",
+          [["Start", null]]);
+};
+$("gear").onclick = () => {
+  if (!confirm("Return to the researcher setup? The current drawing on screen will be cleared.")) return;
+  $("app").classList.add("hidden"); $("setup").classList.remove("hidden"); loadPackages();
+};
+
+loadPackages();
+</script>
+</body>
+</html>

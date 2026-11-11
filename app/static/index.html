@@ -24,6 +24,13 @@
   .lcard.cur { border-color: #c9bfa8; background: #f1ece0; }
   .lcard img { width: 72px; height: 72px; background: #fbf8f0; border: 1px solid #c9bfa8; border-radius: 4px; }
   .lcard.off img { opacity: .45; }
+  #choiceList { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .choice { padding: 3px; border: 2px solid transparent; border-radius: 6px; cursor: pointer;
+            background: none; text-align: center; font-size: 12px; }
+  .choice img { width: 100%; aspect-ratio: 1; background: #fbf8f0; border: 1px solid #c9bfa8;
+                border-radius: 4px; display: block; }
+  .choice.cur { border-color: #3b4d8f; background: #e3e8f4; }
+  .choice.low { opacity: .55; }
   #ui { width: 270px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
   h1 { font-size: 18px; margin: 0; }
   fieldset { border: 1px solid #c9bfa8; border-radius: 6px; padding: 8px; display: flex;
@@ -61,6 +68,12 @@
     <img id="targetImg" alt="" style="width:160px; height:160px; border:1px solid #c9bfa8; border-radius:6px">
     <div class="muted">Generated target (development only, SHOW_TARGET in server.py)</div>
   </div>
+  <fieldset id="choiceBox" class="hidden">
+    <legend>Candidates</legend>
+    <div class="muted">Four hidden targets from one sketch, shown as line drawings.
+      Pick the one to practise; Regenerate gives four new ones.</div>
+    <div id="choiceList"></div>
+  </fieldset>
   <fieldset id="layerBox">
     <legend>Layers</legend>
     <div class="muted">Tick a layer to show it on the canvas, untick to hide it.</div>
@@ -170,6 +183,21 @@ const ink = document.getElementById("ink"), ctx = ink.getContext("2d");
 const $ = id => document.getElementById(id);
 const CHECK_MS = 2000;
 let mode = "sketch", strokes = [], cur = null, st = null, lastGhost = "", practice = [];
+// Practice drawing is kept per construction layer and builds up like a real
+// construction drawing: earlier layers stay on the canvas (lighter) while the
+// current layer is drawn on top. Probes and tests start from a blank canvas.
+let byLayer = {};
+const PREV_INK = "rgba(36, 52, 110, 0.35)";
+function resetDrawing() { strokes = []; practice = []; byLayer = {}; }
+function keepPrevious() {  // earlier layers shown only while practising with help
+  return mode === "draw" && st && st.task === "practice" && st.probe === null;
+}
+async function gotoLayer(next) {  // store this layer's strokes, load the next layer's
+  byLayer[st.layer] = strokes;
+  strokes = byLayer[next] || [];
+  show(await post("/api/layer", { layer: next }));
+  redraw();
+}
 
 async function post(url, body = {}) {
   let j;
@@ -199,13 +227,20 @@ function redraw() {
   const k = ink.width / UI;
   ctx.setTransform(k, 0, 0, k, 0, 0);
   ctx.clearRect(0, 0, UI, UI);
-  ctx.strokeStyle = "#24346e"; ctx.lineCap = ctx.lineJoin = "round";
-  for (const s of strokes.concat(cur ? [cur] : [])) {
-    ctx.lineWidth = s.w;
-    ctx.beginPath();
-    s.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-    ctx.stroke();
-  }
+  ctx.lineCap = ctx.lineJoin = "round";
+  const line = (list, color) => {
+    ctx.strokeStyle = color;
+    for (const s of list) {
+      ctx.lineWidth = s.w;
+      ctx.beginPath();
+      s.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+      ctx.stroke();
+    }
+  };
+  if (keepPrevious())
+    for (const [i, list] of Object.entries(byLayer))
+      if (+i !== st.layer) line(list, PREV_INK);
+  line(strokes.concat(cur ? [cur] : []), "#24346e");
 }
 
 const TEST_NAMES = { baseline: "Baseline test", post: "Immediate post-test",
@@ -247,6 +282,12 @@ function show(s) {
         <b style="color:${s.colors[i]}">${i + 1}. ${name}</b>
         ${cur ? '<br><span class="muted">current step</span>' : ""}</span></label>`;
   }).join("");
+  const choices = s.choices || [];
+  $("choiceBox").classList.toggle("hidden", !choices.length || probing);
+  $("choiceList").innerHTML = choices.map((c, i) =>
+    `<button class="choice${i === s.choice ? " cur" : ""}${c.valid ? "" : " low"}" data-choice="${i}">
+       <img src="${png(c.thumb)}" alt="candidate ${i + 1}">
+       ${i + 1} · seed ${c.seed} · ${c.valid ? "ok" : "LOW"} ${c.conf.toFixed(2)}</button>`).join("");
   $("groupLbl").textContent = `(${s.group})`;
   $("levels").innerHTML = s.levels.map(p =>
     `<div class="part"><span><b>${p.part}</b> <span class="muted">${p.help}</span></span>
@@ -340,23 +381,23 @@ $("reject").onclick = () => review(false);
 $("start").onclick = async () => {
   const r = await post("/api/start", { participant: $("pid").value, group: $("group").value, package: $("pkg").value });
   if (r.error) return;
-  strokes = []; practice = []; redraw(); setMode("draw"); show(r);
+  resetDrawing(); setMode("draw"); show(r); redraw();
   $("group").value = r.group;  // a returning participant keeps their group
   $("status").textContent = `session ${r.participant} (${r.group}) on ${r.package}`;
 };
 $("task").onchange = async () => {
   const r = await post("/api/task", { task: $("task").value });
   if (r.error) return;
-  strokes = []; practice = []; redraw(); show(r);
+  resetDrawing(); show(r); redraw();
   $("status").textContent = "";
 };
 
 // --- practice: layers, Check, probes -----------------------------------------
 async function startProbe(then) {
-  practice = strokes; strokes = []; redraw();      // blank area for the redraw
+  practice = strokes; strokes = [];                // blank area for the redraw
   const r = await post("/api/probe/start");
   if (r.error) { strokes = practice; redraw(); return; }
-  afterProbe = then; show(r);
+  afterProbe = then; show(r); redraw();            // probing: earlier layers hidden too
   $("status").textContent = "";
 }
 let afterProbe = null;
@@ -367,12 +408,14 @@ $("submit").onclick = async () => {
   if (r.error) return;
   const moved = r.changes.map(c => `${c.part} L${c.from}→L${c.to}`).join(", ");
   $("status").textContent = "probe saved" + (moved ? `; help changed: ${moved}` : "");
-  strokes = afterProbe !== null ? [] : practice; practice = []; redraw();
-  if (afterProbe !== null) show(await post("/api/layer", { layer: afterProbe }));
-  else show(r);
+  strokes = practice; practice = [];               // the practice drawing comes back
+  show(r);
+  const next = afterProbe;
   afterProbe = null;
+  if (next !== null) await gotoLayer(next);        // ... and stays under the next layer
+  else redraw();
 };
-$("prev").onclick = async () => { strokes = []; redraw(); show(await post("/api/layer", { layer: st.layer - 1 })); };
+$("prev").onclick = () => gotoLayer(st.layer - 1);
 $("layer").onclick = () => {};
 $("check").onclick = async () => {
   const r = await post("/api/check");
@@ -388,7 +431,7 @@ $("showAll").onclick = () => setVisible(st.layers.map((_, i) => i));
 $("clearBg").onclick = () => setVisible([]);
 
 $("clear").onclick = async () => {
-  strokes = []; redraw();
+  strokes = []; redraw();  // the current layer only; earlier layers stay
   if (mode === "sketch") updateShadow();
 };
 
@@ -440,21 +483,31 @@ $("export").onclick = async () => {
 async function generating(url, body) {
   const btns = [...document.querySelectorAll("button")], was = btns.map(b => b.disabled);
   btns.forEach(b => b.disabled = true);
-  $("status").textContent = "generating and checking the hidden target ...";
+  $("status").textContent = "generating and checking 4 hidden candidate targets ...";
   const r = await post(url, body);
   btns.forEach((b, i) => b.disabled = was[i]);
-  if (!r.error) $("status").textContent = r.valid ? "target ready" : "low landmark confidence: regenerate or change the sketch";
+  if (!r.error) $("status").textContent = r.valid
+    ? "candidates ready: the best one is selected, pick another under Candidates"
+    : "no candidate passed the landmark check: regenerate or change the sketch";
   return r;
 }
 $("pin").onclick = async () => {
   const r = await generating("/api/pin", { strokes, prompt: $("prompt").value, style: $("style").value });
   if (r.error) return;
-  strokes = []; redraw(); setMode("draw"); show(r);
+  resetDrawing(); setMode("draw"); show(r); redraw();
 };
 $("regen").onclick = async () => {
   const r = await generating("/api/regenerate");
   if (r.error) return;
-  strokes = []; redraw(); show(r);
+  resetDrawing(); show(r); redraw();
+};
+$("choiceList").onclick = async e => {
+  const b = e.target.closest("[data-choice]");
+  if (!b || +b.dataset.choice === st.choice) return;
+  const r = await post("/api/choose", { index: +b.dataset.choice });
+  if (r.error) return;
+  resetDrawing(); show(r); redraw();
+  $("status").textContent = `candidate ${r.choice + 1} selected` + (r.valid ? "" : " (low confidence: cannot be saved)");
 };
 $("savePkg").onclick = async () => {
   const r = await post("/api/package/save");
@@ -464,7 +517,7 @@ $("savePkg").onclick = async () => {
   $("pending").value = r.package;
 };
 $("newSketch").onclick = async () => {
-  strokes = []; redraw(); setGhost(""); st = null; setMode("sketch");
+  resetDrawing(); st = null; setMode("sketch"); redraw(); setGhost("");
   await post("/api/shadow", { strokes });
 };
 $("pen").oninput = () => { $("penVal").textContent = $("pen").value; };

@@ -28,7 +28,8 @@ Two modes, following the final proposal (Lecture 4):
 Endpoints (all POST, JSON, points in 480x480 canvas space):
   /api/shadow        {strokes}                    -> {shadow}
   /api/pin           {strokes, prompt, style}     -> state     generate + validate
-  /api/regenerate    {}                           -> state     next seed
+  /api/regenerate    {}                           -> state     next N_CHOICES seeds
+  /api/choose        {index}                      -> state     pick a candidate target
   /api/package/save  {}                           -> {package}
   /api/packages      {}                           -> {packages}
   /api/package/review {package, approve, reviewer, note} -> {package, status}
@@ -42,6 +43,10 @@ Endpoints (all POST, JSON, points in 480x480 canvas space):
   /api/probe/submit  {strokes}                    -> state + {results, changes}
   /api/export        {strokes}                    -> {code}
   /api/summary       {}                           -> {layers, best} best probe per layer
+  /api/state         {}                           -> state     (no change)
+
+Pages: / is the researcher app; /participant is the simplified participant view
+(static/participant.html) for the tablet, on the same session.
 
 Every event goes to sessions/<participant>.jsonl (timestamped, with participant,
 group, task, target, layer, part and level) and to logs/sketchfade.log.
@@ -77,7 +82,10 @@ import package  # noqa: E402
 UI = 480
 SCALE = CANVAS / UI
 N_TARGETS = 10  # retrieval fallback: how many faces Regenerate cycles through
-MAX_TRIES = 3  # seeds tried per Generate / Regenerate before giving up
+# candidates per Generate / Regenerate (seeds k .. k+3), shown side by side so the
+# user picks the target, like ShadowDraw's candidates and Chen et al. 2025's four
+# guidance sketches; the generated image itself stays hidden
+N_CHOICES = 4
 GEN = generate.available()  # False -> retrieval target (no diffusers installed)
 TASKS = ["practice", "baseline", "post", "retention", "transfer"]
 TEST_REF_LAYER = ghost.LAYERS.index("contours")  # side reference in formal tests
@@ -90,7 +98,7 @@ for d in ("logs", "sessions", "participants", "exports"):
 
 lock = threading.Lock()
 engine = None
-S = {"cands": [], "k": 0, "sketch": None, "prompt": "", "style": generate.DEFAULT_STYLE,
+S = {"cands": [], "k": 0, "seed": 0, "choices": [], "choice": None, "sketch": None, "prompt": "", "style": generate.DEFAULT_STYLE,
      "layers": None, "gray": None, "conf": None, "valid": False, "source": None,
      "layer": 0, "visible": {0}, "package": None, "task": "practice", "probe": None,
      "ctrl": fading.Controller(None, "preview", "fixed")}
@@ -116,7 +124,8 @@ def target_label():
         return S["package"]
     if S["layers"] is None:
         return None
-    return f"seed {S['k']}" if GEN else f"db {S['k'] + 1}/{len(S['cands'])}"
+    return (f"seed {S['seed']}" if GEN
+            else f"db {S['seed'] % len(S['cands']) + 1}/{len(S['cands'])}")
 
 
 def event(kind, **fields):
@@ -183,38 +192,65 @@ def try_target(k):
 
 
 def build_target():
-    """B: generate (or retrieve) a hidden target and validate its landmarks.
-    Low confidence -> try the next seed, up to MAX_TRIES; the best attempt is
-    kept but marked invalid, so it cannot be saved as a package.
-    Returns an error dict when no attempt shows a face at all, else None."""
-    best = None
-    for attempt in range(MAX_TRIES):
-        gray, layers, conf, source = try_target(S["k"])
+    """B: generate (or retrieve) N_CHOICES hidden candidate targets (seeds k ..
+    k+N_CHOICES-1) and validate the landmarks of each. Candidates without a face
+    are dropped; low-confidence ones stay listed but cannot be saved. The best
+    candidate (valid first, then highest weakest-landmark confidence) is selected;
+    the user can pick another (/api/choose). The next batch starts after these seeds.
+    Returns an error dict when no candidate shows a face at all, else None."""
+    choices = []
+    for seed in range(S["k"], S["k"] + N_CHOICES):
+        gray, layers, conf, source = try_target(seed)
         ok = layers is not None and min(conf.values()) >= ghost.CONF_MIN
-        log.info("target %s: landmark confidence %s -> %s", source,
+        log.info("candidate %s seed %d: landmark confidence %s -> %s", source, seed,
                  " ".join(f"{p}={c:.2f}" for p, c in conf.items()),
                  "ok" if ok else "LOW" if layers is not None else "NO FACE")
-        event("target", source=source, seed=S["k"], prompt=S["prompt"],
+        event("target", source=source, seed=seed, prompt=S["prompt"],
               style=S["style"], confidence=conf, valid=ok)
-        cand = (min(conf.values()), S["k"], gray, layers, conf, source)
-        if layers is not None and (best is None or cand[0] > best[0]):
-            best = cand
-        if ok:
-            break
-        if attempt < MAX_TRIES - 1:
-            S["k"] += 1
-    if best is None:
-        return {"error": f"no face found in {MAX_TRIES} generated targets: "
+        if layers is None:
+            continue
+        if GEN and gray is not None:
+            os.makedirs(os.path.join(HERE, "targets"), exist_ok=True)
+            Image.fromarray((gray * 255).astype(np.uint8)).save(os.path.join(
+                HERE, "targets", time.strftime(f"target_%Y%m%d_%H%M%S_seed{seed}.png")))
+        choices.append({"seed": seed, "gray": gray, "layers": layers, "conf": conf,
+                        "source": source, "valid": ok})
+    S["k"] += N_CHOICES
+    if not choices:
+        return {"error": f"no face found in {N_CHOICES} generated targets: "
                          "change the sketch or the prompt"}
-    _, k, gray, layers, conf, source = best
-    if GEN and gray is not None:
-        os.makedirs(os.path.join(HERE, "targets"), exist_ok=True)
-        Image.fromarray((gray * 255).astype(np.uint8)).save(os.path.join(
-            HERE, "targets", time.strftime(f"target_%Y%m%d_%H%M%S_seed{k}.png")))
-    S.update(k=k, gray=gray, conf=conf, source=source, package=None, layer=0,
-             visible={0}, probe=None,  # a new target ends any running probe
-             valid=min(conf.values()) >= ghost.CONF_MIN, layers=layers)
+    S["choices"] = choices
+    best = max(range(len(choices)),
+               key=lambda i: (choices[i]["valid"], min(choices[i]["conf"].values())))
+    choose(best, auto=True)
     return None
+
+
+def choose(i, auto=False):
+    """Make candidate i the current (hidden) target."""
+    c = S["choices"][i]
+    S.update(choice=i, seed=c["seed"], gray=c["gray"], conf=c["conf"],
+             source=c["source"], valid=c["valid"], layers=c["layers"], package=None,
+             layer=0, visible={0}, probe=None)  # a new target ends any running probe
+    log.info("candidate %d/%d chosen%s: seed %d", i + 1, len(S["choices"]),
+             " (best, automatic)" if auto else " by the user", c["seed"])
+    event("choose", choice=i, seed=c["seed"], auto=auto, valid=c["valid"],
+          confidence=c["conf"])
+
+
+def choice_thumb(layers):
+    """Candidate thumbnail: the contours over a faint block-in. A line drawing, so
+    the user can judge the face without seeing the generated image."""
+    a_block = (layers[0] > 0) * 0.35
+    a_cont = (layers[2] > 0) * 0.95
+    alpha = np.maximum(a_block, a_cont)
+    rgb = np.where((layers[2] > 0)[..., None], LAYER_RGB[2], LAYER_RGB[0])
+    img = np.zeros(alpha.shape + (4,), np.uint8)
+    img[..., :3] = rgb
+    img[..., 3] = (alpha * 255).astype(np.uint8)
+    buf = io.BytesIO()
+    Image.fromarray(img).save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
 
 
 # --- state -------------------------------------------------------------------
@@ -258,6 +294,12 @@ def state(check=False):
         "visible": sorted(S["visible"]),
         "target_img": (gray_png(S["gray"]) if SHOW_TARGET and S["gray"] is not None
                        else None),
+        # prepare mode: the candidate targets of the last Generate, as line drawings
+        "choices": ([] if S["package"] else
+                    [{"thumb": choice_thumb(c["layers"]), "seed": c["seed"],
+                      "valid": c["valid"], "conf": min(c["conf"].values())}
+                     for c in S["choices"]]),
+        "choice": None if S["package"] else S["choice"],
     }
 
 
@@ -382,7 +424,8 @@ def start(p):
     except ValueError as e:
         return {"error": str(e)}
     S.update(ctrl=ctrl, layers=layers, package=pkg, layer=0, visible={0}, probe=None,
-             task="practice", gray=None, conf=meta.get("confidence"), valid=True)
+             task="practice", gray=None, conf=meta.get("confidence"), valid=True,
+             choices=[], choice=None)
     log.info("session %s participant=%s group=%s package=%s | %s",
              "resumed" if existed else "started", pid, ctrl.group, pkg, fmt_levels())
     event("session_start", resumed=existed, levels=ctrl.levels())
@@ -434,13 +477,20 @@ def handle(path, p):
     if path == "/api/regenerate":
         if S["package"]:
             return {"error": "packages are frozen; generate a new target instead"}
-        S["k"] += 1
-        return build_target() or state()
+        return build_target() or state()  # the next N_CHOICES seeds
+    if path == "/api/choose":
+        if S["package"] or not S["choices"]:
+            return {"error": "no candidates to choose from: generate a target first"}
+        i = int(p.get("index", -1))
+        if not 0 <= i < len(S["choices"]):
+            return {"error": f"candidate index must be 0 to {len(S['choices']) - 1}"}
+        choose(i)
+        return state()
     if path == "/api/package/save":
         if S["package"] or not S["valid"]:
             return {"error": "only a new target that passed the landmark check"}
         pid = package.save(S["layers"], S["gray"], {
-            "prompt": S["prompt"], "style": S["style"], "seed": S["k"],
+            "prompt": S["prompt"], "style": S["style"], "seed": S["seed"],
             "source": S["source"], "confidence": S["conf"],
             "generator": "SD1.5+ControlNet+LCM" if GEN else "ShadowDraw retrieval"})
         log.info("package saved: packages/%s (pending review)", pid)
@@ -493,6 +543,8 @@ def handle(path, p):
         return export(p)
     if path == "/api/summary":
         return summary()
+    if path == "/api/state":  # read the current state without changing it
+        return state()
     return None
 
 
@@ -513,11 +565,16 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(204)
             self.end_headers()
             return
-        if self.path not in ("/", "/index.html"):
+        # / : researcher app (prepare, review, sessions); /participant : the
+        # simplified participant view on the tablet (same server and data)
+        pages = {"/": "index.html", "/index.html": "index.html",
+                 "/participant": "participant.html", "/participant.html": "participant.html"}
+        page = pages.get(self.path.split("?")[0])
+        if page is None:
             log.warning("GET %s 404", self.path)
             return self._send(404, {"error": "not found"})
         log.info("GET %s (page loaded)", self.path)
-        with open(os.path.join(HERE, "static", "index.html"), "rb") as f:
+        with open(os.path.join(HERE, "static", page), "rb") as f:
             self._send(200, f.read(), "text/html; charset=utf-8")
 
     def do_POST(self):

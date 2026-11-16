@@ -23,7 +23,8 @@ Two modes, following the final proposal (Lecture 4):
                a blank area (both groups); the probe decides the level.
     baseline / post / retention / transfer
                formal tests: no overlay, correction, Check or feedback;
-               the drawing is exported under a blinded code for the raters.
+               the drawing is saved as exports/<group>/final/
+               <participant>_<group>_<task>_<key>.png (see "saved drawings").
 
 Endpoints (all POST, JSON, points in 480x480 canvas space):
   /api/shadow        {strokes}                    -> {shadow}
@@ -41,10 +42,11 @@ Endpoints (all POST, JSON, points in 480x480 canvas space):
   /api/check         {}                           -> state     L1 parts shown
   /api/probe/start   {}                           -> state
   /api/probe/submit  {strokes}                    -> state + {results, changes}
-  /api/export        {strokes}                    -> {code}
+  /api/export        {strokes}                    -> {code, file}   formal test drawing
+  /api/practice/step {strokes}                    -> {pass, files}  practice step image(s)
   /api/summary       {}                           -> {layers, best} best probe per layer
   /api/state         {}                           -> state     (no change)
-  /api/erase         {kind: undo|clear, strokes}  -> {ok}      log strokes removed on the canvas
+  /api/erase         {kind: undo|clear|eraser, strokes} -> {ok} log what was removed on the canvas
 
 Pages: / is the researcher app; /participant is the simplified participant view
 (static/participant.html) for the tablet, on the same session.
@@ -293,8 +295,10 @@ def state(check=False):
         "thumbs": [rgba_png((L > 0) * 0.9, LAYER_RGB[i]) for i, L in enumerate(S["layers"])],
         "colors": ["#%02x%02x%02x" % col for col in LAYER_RGB],
         "visible": sorted(S["visible"]),
+        # prepare mode only: a study session (package loaded) never sends the target,
+        # so it cannot reach the participant's tablet
         "target_img": (gray_png(S["gray"]) if SHOW_TARGET and S["gray"] is not None
-                       else None),
+                       and not S["package"] else None),
         # prepare mode: the candidate targets of the last Generate, as line drawings
         "choices": ([] if S["package"] else
                     [{"thumb": choice_thumb(c["layers"]), "seed": c["seed"],
@@ -346,30 +350,96 @@ def probe_submit(p):
     event("probe", probe_layer=ghost.LAYERS[layer], results=results,
           levels_before=before, levels_after=S["ctrl"].levels(),
           changes=[{"part": a, "from": b, "to": c} for a, b, c in changes],
-          strokes=[s["pts"] for s in strokes])
+          strokes=[s["pts"] for s in strokes],
+          timeout=bool(p.get("timeout")))  # True: submitted by the probe time limit
     S["probe"] = None
     return {**state(), "results": results,
             "changes": [{"part": a, "from": b, "to": c} for a, b, c in changes]}
 
 
-def export(p):
-    """Formal test drawing -> exports/<code>.png; the key stays in exports/key.csv."""
-    code = secrets.token_hex(4)
-    img = ~rasterize(p.get("strokes", []), UI, 1.0, width=None)
-    Image.fromarray(img.astype(np.uint8) * 255).save(
-        os.path.join(HERE, "exports", f"{code}.png"))
-    key = os.path.join(HERE, "exports", "key.csv")
-    new = not os.path.exists(key)
-    with open(key, "a", newline="") as f:
+# --- saved drawings --------------------------------------------------------------
+# exports/<group>/<folder>/<participant>_<group>_<stage>[_pass<N>]_<key>.png
+#   folder   block-in .. shadow: one practice step (only that step's strokes)
+#            final: a practice pass with every step combined (stage "final"), and the
+#                   formal test drawings (stage = baseline / post / retention / transfer)
+#   key      8 random hex digits, so a file name never repeats
+# exports/index.csv lists every saved drawing (one row each).
+INDEX_COLS = ["time", "participant", "group", "kind", "stage", "pass", "target", "key", "file"]
+
+
+def strokes_png(strokes):
+    """A drawing as saved: black strokes at their real pen width on white, 480 x 480."""
+    return Image.fromarray((~rasterize(strokes, UI, 1.0, width=None)).astype(np.uint8) * 255)
+
+
+def save_drawing(img, kind, stage, pass_no=None):
+    """Save one drawing under the participant's group, add it to index.csv, return its path
+    relative to exports/."""
+    c = S["ctrl"]
+    key = secrets.token_hex(4)
+    folder = stage if stage in ghost.LAYERS else "final"
+    name = "_".join([c.participant, c.group, stage]
+                    + ([f"pass{pass_no}"] if pass_no else []) + [key]) + ".png"
+    os.makedirs(os.path.join(HERE, "exports", c.group, folder), exist_ok=True)
+    img.save(os.path.join(HERE, "exports", c.group, folder, name))
+    rel = f"{c.group}/{folder}/{name}"
+    index = os.path.join(HERE, "exports", "index.csv")
+    new = not os.path.exists(index)
+    with open(index, "a", newline="") as f:
         wr = csv.writer(f)
         if new:
-            wr.writerow(["code", "participant", "group", "task", "target", "time"])
-        wr.writerow([code, S["ctrl"].participant, S["ctrl"].group, S["task"],
-                     target_label(), time.strftime("%Y-%m-%d %H:%M:%S")])
-    event("export", code=code, n_strokes=len(p.get("strokes", [])))
-    log.info("export %s.png task=%s participant=%s", code, S["task"],
-             S["ctrl"].participant)
-    return {"code": code}
+            wr.writerow(INDEX_COLS)
+        wr.writerow([time.strftime("%Y-%m-%d %H:%M:%S"), c.participant, c.group, kind, stage,
+                     pass_no or "", target_label(), key, rel])
+    return rel
+
+
+def export(p):
+    """Formal test drawing -> exports/<group>/final/<participant>_<group>_<task>_<key>.png."""
+    strokes = p.get("strokes", [])
+    rel = save_drawing(strokes_png(strokes), "test", S["task"])
+    key = rel.rsplit("_", 1)[1][:-4]
+    timeout = bool(p.get("timeout"))  # True: saved by the test time limit
+    event("export", code=key, file=rel, n_strokes=len(strokes), timeout=timeout)
+    log.info("export %s task=%s participant=%s%s", rel, S["task"], S["ctrl"].participant,
+             " (time limit)" if timeout else "")
+    return {"code": key, "file": rel}
+
+
+def practice_pass(c):
+    """The participant's latest practice pass number (0 before the first)."""
+    pat = re.compile(rf"{re.escape(c.participant)}_{c.group}_{ghost.LAYERS[0]}_pass(\d+)_[0-9a-f]+\.png")
+    folder = os.path.join(HERE, "exports", c.group, ghost.LAYERS[0])
+    names = os.listdir(folder) if os.path.isdir(folder) else []
+    return max((int(m.group(1)) for m in map(pat.fullmatch, names) if m), default=0)
+
+
+def practice_step(p):
+    """Practice step done -> exports/<group>/<layer>/<participant>_<group>_<layer>_pass<N>_<key>.png;
+    after the last step also exports/<group>/final/<participant>_<group>_final_pass<N>_<key>.png
+    (every step of the pass combined). Step 1 starts a new pass, so a second practice
+    block or Practise again never overwrites an earlier one."""
+    c = S["ctrl"]
+    if not c.path:
+        return {"error": "practice images need a study session"}
+    if S["task"] != "practice" or S["probe"] is not None:
+        return {"error": "practice images are saved at the end of a practice step"}
+    latest = practice_pass(c)
+    n = latest + 1 if S["layer"] == 0 or latest == 0 else latest
+    strokes = p.get("strokes", [])
+    files = [save_drawing(strokes_png(strokes), "practice", ghost.LAYERS[S["layer"]], n)]
+    if S["layer"] == len(ghost.LAYERS) - 1:  # last step: every step of this pass combined
+        steps = []
+        for layer in ghost.LAYERS:  # the newest image of each step in this pass
+            folder = os.path.join(HERE, "exports", c.group, layer)
+            mine = [os.path.join(folder, f) for f in os.listdir(folder)
+                    if f.startswith(f"{c.participant}_{c.group}_{layer}_pass{n}_")]
+            if mine:
+                steps.append(np.asarray(Image.open(max(mine, key=os.path.getmtime))))
+        files.append(save_drawing(Image.fromarray(np.minimum.reduce(steps)), "practice", "final", n))
+    event("practice_step", pass_no=n, files=files, n_strokes=len(strokes))
+    log.info("practice step saved: %s", ", ".join(f"exports/{f}" for f in files))
+    return {"pass": n, "files": files}
 
 
 def summary():
@@ -542,16 +612,20 @@ def handle(path, p):
         return probe_submit(p)
     if path == "/api/export":
         return export(p)
+    if path == "/api/practice/step":
+        return practice_step(p)
     if path == "/api/summary":
         return summary()
     if path == "/api/state":  # read the current state without changing it
         return state()
-    if path == "/api/erase":  # Undo / Clear on the canvas: logged, nothing else changes
+    if path == "/api/erase":  # Undo / Clear / eraser on the canvas: logged, nothing else changes
         kind = p.get("kind")
-        if kind not in ("undo", "clear"):
-            return {"error": "kind must be undo or clear"}
+        if kind not in ("undo", "clear", "eraser"):
+            return {"error": "kind must be undo, clear or eraser"}
+        # undo / clear: whole strokes; eraser: the runs of points rubbed out in one gesture
         removed = [s.get("pts", []) for s in p.get("strokes", [])]
-        log.info("%s: %d stroke(s) removed from the canvas, layer=%s%s", kind, len(removed),
+        log.info("%s: %d %s removed from the canvas, layer=%s%s", kind, len(removed),
+                 "piece(s)" if kind == "eraser" else "stroke(s)",
                  ghost.LAYERS[S["layer"]], " (probe)" if S["probe"] else "")
         event(kind, n=len(removed), probe=S["probe"] is not None, removed=removed)
         return {"ok": True}

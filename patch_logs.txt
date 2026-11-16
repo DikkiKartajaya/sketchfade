@@ -30,3 +30,107 @@ Tested
     returning participant, /api/layer failure + Try again, Practise again
     failure + retry, new ID, baseline export, no console errors). Test
     data (zz_test, zz_test2) was removed afterwards.
+
+2026-11-17 · Single-session study, timers, eraser, saved drawings, tests
+------------------------------------------------------------------------
+(docs/, app/static/participant.html, app/server.py, app/tests/, app/README.md,
+app/.gitignore)
+
+Added
+  - docs/SketchFade_Study_Instruments_v0.4.docx: v0.3 rewritten for one
+    session of about 2 hours (v0.3 untouched).
+      - I3: one table, 13 steps, with a Tool column (app task or form).
+      - I1/I2: wording for one session.
+      - I4: drawing labels A-D; short-delay retention.
+      - I5-I8: day wording removed.
+      - I7: reworded.
+      - I9: block 1 / block 2 / session columns, plus "extra passes chosen
+        with Practise again".
+      - Allocation: the group is entered on the setup screen before the
+        baseline and locks there.
+  - Test and probe timers, set on the setup screen: test limit (minutes,
+    default 10) and probe limit (seconds, default 15); 0 = no limit.
+      - Formal tests open with a start screen; the clock starts on Start.
+      - "Time left" in the header, with a 1-minute warning.
+      - When time is up, the drawing or probe is submitted automatically.
+      - The timer is stopped on every screen change. The timer and the
+        button cannot both submit.
+      - export and probe log events carry timeout: true/false.
+  - 6 pen sizes (1, 2, 3, 5, 8, 12 px; was 2, 3, 6).
+  - Eraser: rubs out only what it touches. A line cut in the middle becomes
+    two pieces, and Undo still removes the last line drawn. The stylus's
+    eraser end also works. Logged as an "eraser" event (/api/erase).
+  - Practice images (/api/practice/step): every practice step is saved
+    when the participant presses Done, plus a combined final per pass.
+      - A new pass starts at step 1 (block 1, block 2, each Practise again).
+      - If the server can't be reached: "Connection problem / Try again".
+  - Saved drawings, new layout:
+      exports/<group>/<layer>/<pid>_<group>_<layer>_pass<N>_<key>.png
+      exports/<group>/final/<pid>_<group>_final_pass<N>_<key>.png
+      exports/<group>/final/<pid>_<group>_<task>_<key>.png   (formal tests)
+      exports/index.csv: one row per drawing (time, participant, group,
+      kind, stage, pass, target, key, file). Replaces key.csv.
+  - app/tests/test_auto.py (pytest + Playwright, 56 tests):
+      - TestFading: help-level rules and probe scoring.
+      - TestAPI: the study API, run against temp folders.
+      - TestBrowser: the participant view in Chromium against a live
+        server.
+      - BOT01: a full session; its drawings are copied to
+        tests/output/BOT01/ with overview.png.
+    Real study data and logs/sketchfade.log are never touched.
+    Setup: pip install pytest playwright; python -m playwright install
+    chromium.
+
+Changed
+  - Blinding:
+      - Practice intro no longer says the guide fades.
+      - No "less help" / "help is back" messages after probes; levels
+        still change and are logged.
+      - The returning-participant screen names the group only when the
+        pick differs from the saved group.
+      - The reference caption reads "Reference".
+  - The hidden generated target (target_img) is no longer sent once a
+    package is loaded; prepare mode still shows it.
+  - Probe schedule (v0.4): probes only after block-in, skeleton and
+    contours, so one pass gives 3 probes per part. Shading and shadow have
+    no probe.
+  - End of a pass: "Practise again" or "I'm done". I'm done shows "tell the
+    researcher and hand the tablet back"; nothing ends on its own.
+  - Setup:
+      - Tasks in I3 order (warm-up, baseline, practice, post-test,
+        retention), with warm-up selected first.
+      - The portrait choice is kept between tasks; reloading the list used
+        to reset it to the newest package.
+  - Transfer removed from the participant view (task and portrait menu).
+    It runs in the researcher app (/), on the transfer portrait.
+  - Group allocation stays as before: the group is picked at setup before
+    the baseline and locks there. v0.4 was updated to match.
+  - README: new "Saved drawings" section.
+  - .gitignore: .pytest_cache/ and tests/output/.
+
+Fixed
+  - Portrait menu silently switching to the newest package after each task.
+  - Automatic save after a timeout on an empty page could not be retried
+    when the server was unreachable.
+
+Tested
+  - 56/56 passed (about 4 min). Checksums of logs/, sessions/,
+    participants/, exports/ and packages/ before and after each run:
+    unchanged.
+  - Mutation check: 22 deliberate bugs planted one at a time in a
+    throwaway copy of the app (help rules, blinding text, timers, eraser,
+    saving, setup). All 22 make the tests fail; the 2 that first got
+    through led to new tests.
+
+Open
+  - The pen size carries over between tasks (a formal test can start with
+    the last practice pen); proposed: reset to 3 px at each task start.
+  - "Baseline drawing" title: proposed "Drawing check" like post-test and
+    retention.
+  - Review screens (baseline A; end-of-session A-D), the setup status line,
+    and a metrics CSV (two-way error + coverage of test drawings) are not
+    built yet.
+  - Old randomly named drawings and key.csv in exports/ are not migrated.
+  - A second approved portrait is needed for Transfer.
+  - File names now show the group: rename them before putting drawings in
+    the I4 Google Form.

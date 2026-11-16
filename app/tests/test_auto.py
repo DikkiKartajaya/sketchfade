@@ -452,6 +452,42 @@ class TestAPI:
         assert sorted(re.fullmatch(NAME, Path(x["file"]).name)["pass"] + x["participant"]
                       for x in index_rows(sb)) == ["1P01", "1P02", "2P01"]
 
+    def test_make_pairs_puts_each_final_drawing_beside_its_reference(self, sb):
+        import make_pairs
+        for pid, group in (("P01", "adaptive"), ("P02", "fixed")):
+            api("/api/start", participant=pid, group=group, package="pkgA")
+            for k in range(5):                                      # one practice pass
+                api("/api/layer", layer=k)
+                api("/api/practice/step", strokes=[{"pts": [[60 + 60 * k, 60], [60 + 60 * k, 420]], "w": 4}])
+            api("/api/task", task="baseline")
+            api("/api/export", strokes=[{"pts": [[100, 240], [380, 240]], "w": 6}])
+        api("/api/start", participant="P01", group="adaptive", package="pkgB")
+        api("/api/task", task="transfer")
+        api("/api/export", strokes=[{"pts": [[240, 100], [240, 380]], "w": 6}])
+
+        made = make_pairs.make_pairs(app_dir=str(sb))
+        rows = [r for r in index_rows(sb) if r["stage"] not in ghost.LAYERS]   # the final/ drawings
+        assert sorted(made) == sorted(f"{r['group']}/compare/{Path(r['file']).stem}_compare.png" for r in rows)
+        assert len(made) == 5                                       # 2 practice finals + 3 tests
+        for r in rows:
+            img = np.asarray(Image.open(sb / "exports" / r["group"] / "compare" /
+                                        f"{Path(r['file']).stem}_compare.png"))
+            c, n = make_pairs.CAPTION, make_pairs.SIZE
+            assert img.shape == (n + 2 * c, 2 * n + 16)
+            drawing = np.asarray(Image.open(sb / "exports" / r["file"]))
+            ref = np.asarray(Image.open(sb / "exports" / "references" / f"{r['target']}_reference.png"))
+            left, right = img[c:c + n, :n], img[c:c + n, n + 16:]
+            assert (left[1:-1, 1:-1] == drawing[1:-1, 1:-1]).all()     # inside the frame line
+            assert (right[1:-1, 1:-1] == ref[1:-1, 1:-1]).all()
+        refs = sorted(p.name for p in (sb / "exports" / "references").iterdir())
+        assert refs == ["pkgA_reference.png", "pkgB_reference.png"]  # transfer gets its own
+        ra, rb = (np.asarray(Image.open(sb / "exports" / "references" / f"{p}_reference.png"))
+                  for p in ("pkgA", "pkgB"))
+        assert ra.shape == rb.shape == (480, 480) and ra.min() < 128 and rb.min() < 128   # grey lines
+        assert (ra != rb).any()                                     # each portrait its own outline
+        assert make_pairs.make_pairs(app_dir=str(sb), participant="P02") == \
+            [m for m in made if "/P02_" in m]                       # one participant only
+
     def test_practice_images_only_at_the_end_of_a_practice_step(self, sb):
         assert "error" in api("/api/practice/step", strokes=[])     # no session yet
         api("/api/start", participant="P01", group="adaptive", package="pkgA")
@@ -1067,6 +1103,11 @@ class TestBrowser:
         assert sorted(f.name for f in (exports / "adaptive" / "final").iterdir()) == \
             sorted(Path(r["file"]).name for r in rows if r["stage"] not in ghost.LAYERS)
         assert list(exports.glob("*.png")) == [] and not (exports / "key.csv").exists()
+
+        # each final drawing beside its reference (make_pairs.py, run after the session)
+        import make_pairs
+        made = make_pairs.make_pairs(app_dir=str(sb))
+        assert len(made) == 6                                        # 2 practice finals + 4 tests
         save_bot_output(sb, pid)
 
 

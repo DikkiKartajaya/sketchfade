@@ -44,6 +44,7 @@ Endpoints (all POST, JSON, points in 480x480 canvas space):
   /api/export        {strokes}                    -> {code}
   /api/summary       {}                           -> {layers, best} best probe per layer
   /api/state         {}                           -> state     (no change)
+  /api/erase         {kind: undo|clear, strokes}  -> {ok}      log strokes removed on the canvas
 
 Pages: / is the researcher app; /participant is the simplified participant view
 (static/participant.html) for the tablet, on the same session.
@@ -545,6 +546,15 @@ def handle(path, p):
         return summary()
     if path == "/api/state":  # read the current state without changing it
         return state()
+    if path == "/api/erase":  # Undo / Clear on the canvas: logged, nothing else changes
+        kind = p.get("kind")
+        if kind not in ("undo", "clear"):
+            return {"error": "kind must be undo or clear"}
+        removed = [s.get("pts", []) for s in p.get("strokes", [])]
+        log.info("%s: %d stroke(s) removed from the canvas, layer=%s%s", kind, len(removed),
+                 ghost.LAYERS[S["layer"]], " (probe)" if S["probe"] else "")
+        event(kind, n=len(removed), probe=S["probe"] is not None, removed=removed)
+        return {"ok": True}
     return None
 
 

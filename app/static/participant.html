@@ -277,7 +277,8 @@ function updateButtons() {
   $("check").classList.toggle("hidden", !(phase === "practice" && anyL1));
   $("undo").disabled = !strokes.length;
   $("clear").disabled = !strokes.length;
-  $("main").disabled = phase !== "practice" && phase !== "warmup" && !strokes.length;
+  // every step needs at least one stroke before Done (practice, probe and tests)
+  $("main").disabled = phase !== "warmup" && !strokes.length;
 }
 $("pens").innerHTML = PENS.map(w =>
   `<button class="pen${w === pen ? " on" : ""}" data-w="${w}"><i style="width:${w * 3}px;height:${w * 3}px"></i></button>`).join("");
@@ -301,8 +302,14 @@ function cover(title, text, buttons) {
 }
 
 // --- actions ------------------------------------------------------------------
-$("undo").onclick = () => { strokes.pop(); redraw(); updateButtons(); };  // canvas only; the log keeps every stroke
-$("clear").onclick = () => { strokes = []; redraw(); updateButtons(); };
+// Undo / Clear remove strokes from the canvas; the server logs what was removed
+// (the strokes themselves stay in the log as they were drawn). Warm-up logs nothing.
+function erase(kind, removed) {
+  redraw(); updateButtons();
+  if (phase !== "warmup" && removed.length) post("/api/erase", { kind, strokes: removed });
+}
+$("undo").onclick = () => { const s = strokes.pop(); erase("undo", s ? [s] : []); };
+$("clear").onclick = () => { const s = strokes; strokes = []; erase("clear", s); };
 $("check").onclick = async () => {
   const r = await post("/api/check"); if (r.error) return;
   $("ghost").src = png(r.ghost);

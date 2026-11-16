@@ -431,8 +431,10 @@ $("showAll").onclick = () => setVisible(st.layers.map((_, i) => i));
 $("clearBg").onclick = () => setVisible([]);
 
 $("clear").onclick = async () => {
+  const removed = strokes;
   strokes = []; redraw();  // the current layer only; earlier layers stay
-  if (mode === "sketch") updateShadow();
+  if (mode === "sketch") return updateShadow();
+  if (removed.length) post("/api/erase", { kind: "clear", strokes: removed });  // logged
 };
 
 // --- session summary: best probe per layer --------------------------------------

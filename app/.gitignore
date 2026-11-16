@@ -7,3 +7,6 @@ logs/
 models/
 __pycache__/
 .venv/
+# test runs (tests/test_auto.py)
+.pytest_cache/
+tests/output/

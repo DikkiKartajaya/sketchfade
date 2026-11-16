@@ -167,9 +167,28 @@ of `fading.py`, to be checked in the 3-user pilot.
 Tasks `baseline`, `post`, `retention` and `transfer` disable overlays,
 correction, Check and feedback (no error, no level panel) in both groups. The
 side reference shows the `contours` layer of the session's package. **Finish
-test drawing** saves the drawing as `exports/<code>.png` with a random code;
-`exports/key.csv` maps codes to participant, group, task and target, so raters
-only see the codes.
+test drawing** saves the drawing (see *Saved drawings*).
+
+### Saved drawings
+
+Every saved drawing is a 480 × 480 PNG (black strokes at their real pen width
+on white, no guide layers), filed by group, then by stage:
+
+```
+exports/
+  adaptive/                       (fixed/ has the same folders)
+    block-in/ skeleton/ contours/ shading/ shadow/
+                P01_adaptive_block-in_pass1_3f9a2c1d.png   one practice step, its strokes only
+    final/      P01_adaptive_final_pass1_9b0e44aa.png      a practice pass, every step combined
+                P01_adaptive_baseline_c2d18f07.png         formal tests: baseline, post,
+                P01_adaptive_transfer_5e61b0a3.png         retention, transfer
+  index.csv     time, participant, group, kind, stage, pass, target, key, file
+```
+
+Name: `<participant>_<group>_<stage>[_pass<N>]_<key>.png`; the key is random, so
+names never repeat. A practice pass starts at step 1 (practice block 1, block 2,
+each *Practise again*). Practice images come from the participant view
+(`/participant`); probe redraws stay in the session log.
 
 ## Study logger
 

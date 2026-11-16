@@ -40,7 +40,9 @@
   .dot.done { background: var(--accent); }
   .dot.now { background: var(--warm); }
   #stepName { font-size: 15px; color: var(--muted); }
-  #gear { margin-left: auto; background: none; color: var(--muted); font-size: 22px; padding: 6px 10px; }
+  #clock { margin-left: auto; font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  #clock.low { color: var(--warm); }
+  #gear { margin-left: 8px; background: none; color: var(--muted); font-size: 22px; padding: 6px 10px; }
 
   main { display: flex; justify-content: center; align-items: flex-start; gap: 22px; padding: 4px 22px; min-height: 0; }
   #board { position: relative; width: var(--size, 520px); height: var(--size, 520px); background: #fffdf8;
@@ -56,9 +58,11 @@
           color: var(--ink); }
   #note:empty { visibility: hidden; }
 
-  footer { display: flex; justify-content: center; align-items: center; gap: 12px; padding: 12px 22px 20px; }
+  footer { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px;
+           padding: 12px 22px 20px; }
   .tool { padding: 14px 20px; font-size: 17px; background: var(--paper); color: var(--ink);
           box-shadow: 0 2px 6px rgba(40,30,10,.1); }
+  .tool.on { background: #e6ecf7; box-shadow: inset 0 0 0 2px var(--accent); }
   #pens { display: flex; gap: 6px; background: var(--paper); padding: 6px; border-radius: 14px; }
   .pen { width: 46px; height: 46px; background: none; display: grid; place-items: center; }
   .pen.on { background: #e6ecf7; }
@@ -89,17 +93,20 @@
   <input id="pid" placeholder="e.g. P01" autocomplete="off">
   <label for="group">Group</label>
   <select id="group"><option>adaptive</option><option>fixed</option></select>
-  <label for="pkg">Portrait (approved package)</label>
+  <label for="pkg">Trained portrait (the Transfer test runs in the researcher app)</label>
   <select id="pkg"></select>
-  <label for="taskSel">Task</label>
+  <label for="taskSel">Task (in the I3 order)</label>
   <select id="taskSel">
-    <option value="warmup">Warm-up (stylus practice, nothing saved)</option>
-    <option value="practice" selected>Practice (with help)</option>
-    <option value="baseline">Baseline test</option>
-    <option value="post">Immediate post-test</option>
-    <option value="retention">Delayed retention test (Day 7)</option>
-    <option value="transfer">Unseen portrait (transfer)</option>
+    <option value="warmup" selected>Warm-up (stylus practice, nothing saved)</option>
+    <option value="baseline">Baseline</option>
+    <option value="practice">Practice (run twice: block 1, block 2)</option>
+    <option value="post">Post-test</option>
+    <option value="retention">Retention</option>
   </select>
+  <label for="testMin">Test time limit (minutes, 0 = no limit)</label>
+  <input id="testMin" type="number" min="0" step="0.5" value="10">
+  <label for="probeSec">Probe time limit (seconds, 0 = no limit)</label>
+  <input id="probeSec" type="number" min="0" step="5" value="15">
   <button class="go" id="go">Start</button>
   <div id="setupMsg"></div>
 </div>
@@ -108,6 +115,7 @@
   <header>
     <div id="steps"></div>
     <div id="stepName"></div>
+    <div id="clock"></div>
     <button id="gear" title="Researcher setup">&#9881;</button>
   </header>
   <main>
@@ -118,7 +126,7 @@
     <div id="side">
       <h2 id="task"></h2>
       <p id="hint"></p>
-      <div id="refCard"><img id="ref" alt=""><div>The step to draw</div></div>
+      <div id="refCard"><img id="ref" alt=""><div>Reference</div></div>
       <div id="note"></div>
     </div>
   </main>
@@ -126,6 +134,7 @@
     <button class="tool" id="undo">&#8630; Undo</button>
     <button class="tool" id="clear">Clear</button>
     <div id="pens" title="Pen size"></div>
+    <button class="tool" id="eraser">Eraser</button>
     <button class="tool" id="check">Show me</button>
     <button id="main"></button>
   </footer>
@@ -145,7 +154,8 @@ const $ = id => document.getElementById(id);
 const UI = 480;                      // drawing space of the API and the logs
 const CHECK_MS = 2000;
 const PREV_INK = "rgba(34, 48, 79, 0.33)";
-const PENS = [2, 3, 6];
+const PENS = [1, 2, 3, 5, 8, 12];   // pen widths in drawing space (probes are scored at a fixed width)
+const ERASE_R = 9;                  // eraser radius in drawing space
 
 // What each construction step asks for, in plain words (keyed by layer name).
 const STEP = {
@@ -155,14 +165,17 @@ const STEP = {
   "shading":  ["Soft shading", "Add soft shading where the face turns away from the light."],
   "shadow":   ["Dark areas", "Fill in the darkest areas, like the hair and the deepest shadows."],
 };
-const PART = { head: "the head", eyes: "the eyes", nose: "the nose", mouth: "the mouth", neck: "the neck" };
-const TESTS = { baseline: "Baseline drawing", post: "Drawing check", retention: "Drawing check",
-                transfer: "New portrait" };
+const TESTS = { baseline: "Baseline drawing", post: "Drawing check", retention: "Drawing check" };
+// Steps that end with an unassisted redraw (probe). One pass gives every part 3 probes,
+// so two practice blocks give 6: the minimum to fade from L3 to L0 (I3, Study Instruments v0.4).
+// The tone steps (shading, shadow) are practised without a probe.
+const PROBE_LAYERS = ["block-in", "skeleton", "contours"];
 
 let st = null;               // last server state
 let phase = "practice";      // practice | probe | test | warmup (no server calls)
 let strokes = [], practice = [], byLayer = {}, cur = null;
 let pen = 3, penSeen = false;
+let tool = "pen", rub = null;  // rub: the eraser gesture in progress {at, removed}
 
 async function post(url, body = {}) {
   try {
@@ -172,6 +185,51 @@ async function post(url, body = {}) {
 }
 const png = b => b ? "data:image/png;base64," + b : "";
 function busy(on) { $("wait").classList.toggle("hidden", !on); }
+
+// --- timers (formal tests and probes; limits set on the setup screen) ---------
+// One timer at a time. It is stopped on every screen change, so a timer from an
+// earlier task can never fire on the next one. When time is up, the running
+// stroke is dropped and the drawing is submitted as if the participant pressed
+// the main button; the server logs timeout: true.
+let timer = null, timedOut = false, sending = false;
+const limit = id => Math.max(0, +$(id).value || 0);  // setup value, 0 = no limit
+const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+function stopTimer() {
+  if (timer) clearInterval(timer);
+  timer = null; timedOut = false;
+  $("clock").textContent = ""; $("clock").className = "";
+}
+function startTimer(sec, warnAt, warnNote, onEnd) {
+  stopTimer(); timedOut = false;
+  if (!(sec > 0)) return;
+  const end = Date.now() + sec * 1000;
+  let warned = false;
+  const tick = () => {
+    const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    $("clock").textContent = "Time left " + mmss(left);
+    if (!warned && left <= warnAt) {
+      warned = true; $("clock").className = "low";
+      if (warnNote) note(warnNote);
+    }
+    if (left > 0) return;
+    clearInterval(timer); timer = null; timedOut = true;
+    $("clock").textContent = "Time is up";
+    cur = null;                    // a stroke still being drawn is not kept
+    if (rub) {                     // an eraser gesture still running ends here (and is logged)
+      const g = rub; rub = null;
+      if (g.removed.length) erase("eraser", g.removed.map(pts => ({ pts })));
+    }
+    redraw(); updateButtons();
+    onEnd();
+  };
+  timer = setInterval(tick, 250);
+  tick();
+}
+const startTestTimer = () => {
+  const sec = Math.round(limit("testMin") * 60);
+  startTimer(sec, sec >= 120 ? 60 : 0, sec >= 120 ? "1 minute left." : "", () => finishTest());
+};
+const startProbeTimer = () => startTimer(Math.round(limit("probeSec")), 5, "", () => submitProbe());
 
 // --- canvas -------------------------------------------------------------------
 const ink = $("ink"), ctx = ink.getContext("2d");
@@ -201,6 +259,10 @@ function redraw() {
   if (phase === "practice" && st)  // earlier steps stay under the current one
     for (const [i, list] of Object.entries(byLayer)) if (+i !== st.layer) draw(list, PREV_INK);
   draw(strokes.concat(cur ? [cur] : []), "#22304f");
+  if (rub) {  // eraser outline under the pen while rubbing
+    ctx.lineWidth = 1; ctx.strokeStyle = "rgba(168, 58, 30, 0.6)";
+    ctx.beginPath(); ctx.arc(rub.at[0], rub.at[1], ERASE_R, 0, 2 * Math.PI); ctx.stroke();
+  }
 }
 
 const pos = e => {
@@ -211,10 +273,23 @@ ink.onpointerdown = e => {
   if (e.pointerType === "pen") penSeen = true;
   if (penSeen && e.pointerType === "touch") return;   // palm rejection once a stylus is used
   ink.setPointerCapture(e.pointerId);
+  if (tool === "eraser" || (e.buttons & 32)) {        // eraser tool, or the stylus's eraser end
+    const p = pos(e);
+    rub = { at: p, removed: [] }; rubOut(p, p);
+    return;
+  }
   cur = { pts: [pos(e)], w: pen };
 };
-ink.onpointermove = e => { if (cur) { cur.pts.push(pos(e)); redraw(); } };
+ink.onpointermove = e => {
+  if (rub) { const p = pos(e), a = rub.at; rub.at = p; rubOut(a, p); return; }
+  if (cur) { cur.pts.push(pos(e)); redraw(); }
+};
 ink.onpointerup = ink.onpointercancel = async () => {
+  if (rub) {                                          // end of an eraser gesture: log what went
+    const r = rub; rub = null; redraw();
+    if (r.removed.length) erase("eraser", r.removed.map(pts => ({ pts })));
+    return;
+  }
   if (!cur) return;
   const s = cur; cur = null;
   if (s.pts.length < 2) return redraw();
@@ -225,6 +300,44 @@ ink.onpointerup = ink.onpointercancel = async () => {
   s.pts = r.pts; st = r; redraw(); paintGuides();   // L3: the stroke may be gently corrected
 };
 
+// Eraser: rub out the parts of the current step's strokes within ERASE_R of the path a -> b.
+// A stroke cut in the middle becomes two strokes in its place (so Undo still removes the
+// last stroke drawn); pieces shorter than 2 points are dropped. Only the canvas changes;
+// what was rubbed out is logged at the end of the gesture.
+function distSeg(p, a, b) {  // distance from point p to segment a-b
+  const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy;
+  const t = L ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L)) : 0;
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+}
+function rubOut(a, b) {
+  const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / (ERASE_R / 2)));
+  const spots = Array.from({ length: n + 1 }, (_, i) =>
+    [a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n]);
+  const near = q => spots.some(s => Math.hypot(q[0] - s[0], q[1] - s[1]) <= ERASE_R);
+  const nearSeg = (q, r) => spots.some(s => distSeg(s, q, r) <= ERASE_R);
+  let changed = false;
+  const out = [];
+  for (const s of strokes) {
+    const runs = [], gone = [];
+    let run = [], hit = false;
+    for (const q of s.pts) {
+      if (near(q)) { hit = true; gone.push(q); if (run.length) runs.push(run); run = []; continue; }
+      if (run.length && nearSeg(run[run.length - 1], q)) { hit = true; runs.push(run); run = []; }
+      run.push(q);  // a segment passing under the eraser is cut even if its ends are outside
+    }
+    if (run.length) runs.push(run);
+    if (!hit) { out.push(s); continue; }
+    changed = true;
+    for (const r of runs) {
+      if (r.length >= 2) out.push({ pts: r, w: s.w });
+      else gone.push(...r);
+    }
+    if (gone.length) rub.removed.push(gone);
+  }
+  if (changed) { strokes = out; updateButtons(); }
+  redraw();
+}
+
 // --- screen -------------------------------------------------------------------
 function note(t) { $("note").textContent = t || ""; }
 function paintGuides() {
@@ -232,6 +345,7 @@ function paintGuides() {
   $("ref").src = png(st.ref);
 }
 function render() {
+  setTool("pen");  // every new screen starts with the pen, so the eraser is never left on by surprise
   if (phase === "warmup") return renderWarmup();
   const names = st.layers, i = st.probe !== null ? st.probe : st.layer;
   const [title, hint] = STEP[names[i]] || [names[i], ""];
@@ -245,12 +359,12 @@ function render() {
     $("main").className = "";
   } else if (phase === "probe") {
     $("task").textContent = "Now on your own";
-    $("hint").textContent = `Draw the same step again on the empty page, without the guide on top. Use the small picture: ${hint.charAt(0).toLowerCase() + hint.slice(1)}`;
+    $("hint").textContent = `Draw the same step again on the empty page, without the guide on top. Use the reference picture: ${hint.charAt(0).toLowerCase() + hint.slice(1)}`;
     $("main").textContent = "Done";
     $("main").className = "warm";
   } else {
     $("task").textContent = TESTS[st.task] || "Drawing";
-    $("hint").textContent = "Draw the portrait on your own, as well as you can. There is no help in this part. Take your time.";
+    $("hint").textContent = "Draw the portrait on your own, as well as you can. There is no help in this part.";
     $("main").textContent = "I'm finished";
     $("main").className = "warm";
   }
@@ -264,7 +378,7 @@ function renderWarmup() {  // stylus practice: blank canvas, no guide, no steps
   $("stepName").textContent = "Warm-up";
   $("task").textContent = "Try the pen";
   $("hint").textContent = "Draw lines, circles, anything you like, to get used to the pen and the tablet. "
-    + "Try the pen sizes, Undo and Clear. Nothing here is saved.";
+    + "Try the pen sizes, the eraser, Undo and Clear. Nothing here is saved.";
   $("main").textContent = "I'm done practising";
   $("main").className = "";
   $("refCard").classList.add("hidden");
@@ -277,16 +391,23 @@ function updateButtons() {
   $("check").classList.toggle("hidden", !(phase === "practice" && anyL1));
   $("undo").disabled = !strokes.length;
   $("clear").disabled = !strokes.length;
-  // every step needs at least one stroke before Done (practice, probe and tests)
-  $("main").disabled = phase !== "warmup" && !strokes.length;
+  // every step needs at least one stroke before Done (practice, probe and tests);
+  // after a timeout the button stays usable, so a failed automatic submit can be retried
+  $("main").disabled = phase !== "warmup" && !strokes.length && !timedOut;
 }
 $("pens").innerHTML = PENS.map(w =>
   `<button class="pen${w === pen ? " on" : ""}" data-w="${w}"><i style="width:${w * 3}px;height:${w * 3}px"></i></button>`).join("");
+function setTool(t) {  // "pen" (with the chosen size) or "eraser"
+  tool = t;
+  $("eraser").classList.toggle("on", t === "eraser");
+  document.querySelectorAll(".pen").forEach(x =>
+    x.classList.toggle("on", t === "pen" && +x.dataset.w === pen));
+}
 $("pens").onclick = e => {
   const b = e.target.closest("[data-w]"); if (!b) return;
-  pen = +b.dataset.w;
-  document.querySelectorAll(".pen").forEach(x => x.classList.toggle("on", x === b));
+  pen = +b.dataset.w; setTool("pen");
 };
+$("eraser").onclick = () => setTool(tool === "eraser" ? "pen" : "eraser");
 
 function cover(title, text, buttons) {
   $("coverTitle").textContent = title;
@@ -317,9 +438,10 @@ $("check").onclick = async () => {
 };
 
 $("main").onclick = async () => {
-  if (phase === "practice") {             // end of a step: unassisted redraw
+  if (phase === "practice") {             // end of a step: unassisted redraw, line steps only
+    if (!PROBE_LAYERS.includes(st.layers[st.layer])) return nextStep();
     cover("Now on your own",
-          "The page will be empty and the guide hidden. Draw this step again on your own, looking only at the small picture.",
+          "The page will be empty and the guide hidden. Draw this step again on your own, looking only at the reference picture.",
           [["OK, start", startProbe]]);
   } else if (phase === "probe") {
     await submitProbe();
@@ -336,29 +458,44 @@ async function startProbe() {
   const r = await post("/api/probe/start");
   if (r.error) { strokes = practice; return note(r.error); }
   st = r; phase = "probe"; note(""); render();
+  startProbeTimer();
 }
 
 async function submitProbe() {
-  busy(true);
-  const r = await post("/api/probe/submit", { strokes });
-  busy(false);
-  if (r.error) return note(r.error);
+  if (sending) return;           // the timer and the Done button cannot both submit
+  sending = true; busy(true);
+  const r = await post("/api/probe/submit", { strokes, timeout: timedOut });
+  busy(false); sending = false;
+  if (r.error) return note(r.error);  // the timer keeps running; Done tries again
+  stopTimer();
   st = r; phase = "practice";
   strokes = practice; practice = [];
-  const less = r.changes.filter(c => c.to < c.from).map(c => PART[c.part] || c.part);
-  const more = r.changes.filter(c => c.to > c.from).map(c => PART[c.part] || c.part);
-  const msg = [less.length ? `Well done: you get less help with ${less.join(", ")} from now on.` : "",
-               more.length ? `Help with ${more.join(", ")} is back for a while.` : ""].join(" ").trim();
+  // Help level changes (r.changes) are logged by the server but never announced:
+  // telling the participant would reveal the condition (I3, I8).
+  await nextStep();
+}
+
+// Keep this step's drawing and move on; after the last step, the participant chooses
+// to practise again or to stop and hand the tablet back (nothing ends on its own).
+async function nextStep() {
   const next = st.layer + 1;
   byLayer[st.layer] = strokes;
-  if (next < st.layers.length) {
-    await goToLayer(next, msg || "Saved. On to the next step.");
-  } else {
+  // the step's drawing is saved as an image (exports/practice/<participant>/pass<N>/);
+  // if the server can't be reached, stay here and offer Try again (nothing is lost)
+  busy(true);
+  const saved = await post("/api/practice/step", { strokes });
+  busy(false);
+  if (saved.error) {
     render();
-    cover("All steps done",
-          (msg ? msg + " " : "") + "You finished every step of this portrait. You can practise it once more from the start.",
-          [["Practise again", restartPractice], ["Stop here", () => note("Please tell the researcher you are done."), true]]);
+    return cover("Connection problem", saved.error + " Your drawing is kept.", [["Try again", nextStep]]);
   }
+  if (next < st.layers.length) return goToLayer(next, "Saved. On to the next step.");
+  render();
+  cover("All steps done",
+        "You finished every step of this portrait. You can practise it again from the start, "
+        + "or tell the researcher you are done and hand the tablet back.",
+        [["Practise again", restartPractice],
+         ["I'm done", () => note("Please tell the researcher you are done and hand the tablet back."), true]]);
 }
 
 // Move to a step. If the server can't be reached, stay on the current step
@@ -380,10 +517,12 @@ async function goToLayer(next, msg, restart = false) {
 function restartPractice() { return goToLayer(0, "", true); }
 
 async function finishTest() {
-  busy(true);
-  const r = await post("/api/export", { strokes });
-  busy(false);
-  if (r.error) return note(r.error);
+  if (sending) return;           // the timer and "I'm finished" cannot both export
+  sending = true; busy(true);
+  const r = await post("/api/export", { strokes, timeout: timedOut });
+  busy(false); sending = false;
+  if (r.error) return note(r.error);  // drawing kept; "I'm finished" tries again
+  stopTimer();
   strokes = []; redraw();
   cover("Thank you", "Your drawing is saved. Please hand the tablet back to the researcher.",
         [["OK", toSetup]]);
@@ -394,9 +533,14 @@ let hasPackage = false;
 async function loadPackages() {
   const r = await post("/api/packages");
   const ok = (r.packages || []).filter(m => m.review.status === "approved").reverse();
-  $("pkg").innerHTML = ok.length
+  const opts = ok.length
     ? ok.map(m => `<option value="${m.id}">${m.prompt || m.id} (${m.id})</option>`).join("")
     : `<option value="">No approved portrait yet: prepare one in the researcher app</option>`;
+  // rebuilding the list resets it to the first option, which would silently switch the
+  // portrait between tasks: keep the facilitator's earlier choice when it still exists
+  const keep = $("pkg").value;
+  $("pkg").innerHTML = opts;
+  if (ok.some(m => m.id === keep)) $("pkg").value = keep;
   hasPackage = ok.length > 0;
   updateGo();
 }
@@ -406,17 +550,20 @@ function updateGo() {  // the warm-up needs no package
 $("taskSel").onchange = updateGo;
 
 function showApp() {
+  stopTimer();
   $("setup").classList.add("hidden"); $("app").classList.remove("hidden");
   layout(); render(); note("");
 }
 function toSetup() {
+  stopTimer();
   $("app").classList.add("hidden"); $("setup").classList.remove("hidden"); loadPackages();
 }
 
 $("go").onclick = async () => {
   $("setupMsg").textContent = "";
   byLayer = {}; strokes = []; practice = [];
-  if ($("taskSel").value === "warmup") {  // stylus practice: no session, nothing logged
+  const task = $("taskSel").value;
+  if (task === "warmup") {  // stylus practice: no session, nothing logged
     st = null; phase = "warmup"; showApp();
     return;
   }
@@ -425,8 +572,8 @@ $("go").onclick = async () => {
                                     package: $("pkg").value });
   if (r.error) return void ($("setupMsg").textContent = r.error);
   const resumed = r.resumed;  // only /api/start says whether the participant existed
-  if ($("taskSel").value !== "practice") {
-    r = await post("/api/task", { task: $("taskSel").value });
+  if (task !== "practice") {
+    r = await post("/api/task", { task });
     if (r.error) return void ($("setupMsg").textContent = r.error);
   }
   st = r;
@@ -435,16 +582,26 @@ $("go").onclick = async () => {
   showApp();
   const intro = () => {
     if (phase === "practice")
+      // same words for both groups: never mention fading or the conditions (I3)
       cover("Let's draw a portrait", "You will build the face step by step, from big shapes to details. "
-            + "A faint guide helps you; it fades as you improve. After each step you redraw it once on your own.",
+            + "A faint guide shows where to draw. After some steps you redraw the step once on your own.",
             [["Start", null]]);
+    else {  // formal test: the clock starts when the participant presses Start
+      const min = limit("testMin");
+      cover(TESTS[st.task] || "Drawing", "Draw the portrait on your own, as well as you can. There is no help "
+            + "in this part. " + (min > 0 ? `You have ${min} minutes; the time left is shown at the top.`
+                                          : "Take your time."),
+            [["Start", startTestTimer]]);
+    }
   };
   if (!resumed) return intro();
+  // the group is named only when the pick differs, so the facilitator can catch it;
+  // otherwise this screen (seen on the tablet) shows no condition
   const kept = picked !== st.group
-    ? `Group kept: ${st.group} (you picked ${picked}; the first assignment never changes).`
-    : `Group: ${st.group}.`;
-  cover("Returning participant", `${st.participant} has a session from before. ${kept} `
-        + "Their help levels carry over. Press Continue, then hand the tablet over.",
+    ? `Group kept: ${st.group} (you picked ${picked}; the first assignment never changes). `
+    : "";
+  cover("Returning participant", `${st.participant} has a session from before. ${kept}`
+        + "Their settings carry over. Press Continue, then hand the tablet over.",
         [["Continue", intro], ["Back to setup", toSetup, true]]);
 };
 $("gear").onclick = () => {

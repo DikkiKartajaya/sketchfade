@@ -41,6 +41,23 @@ ssh -N -L 9100:127.0.0.1:9100 user@gpu-server
 scp -r user@gpu-server:~/sketchfade/app/{sessions,participants,exports,packages,logs} .
 ```
 
+**Shared lab server, from a Windows laptop: `connect.bat`.** Double-click it
+on the laptop (once the environment above is set up on the server). The first run
+asks for the SSH login, the app folder on the server and the port, and saves
+them in `connect.cfg` (git-ignored). Each run then lists the server's GPUs
+(memory, load, who is using them), lets you **pick the GPU by hand**, starts
+the app on it with `serve_gpu.sh` (`CUDA_DEVICE_ORDER=PCI_BUS_ID`, so the
+numbers match `nvidia-smi`), tunnels it and opens the browser once the app
+answers. The app still listens only on 127.0.0.1 of the server.
+
+The GPU is released when the app ends: **Ctrl+C or closing the window** stops it
+(the SSH terminal hangs up), and if the connection drops without a clean close
+the app exits by itself after `SKETCHFADE_IDLE_EXIT` seconds (120 by default
+in `serve_gpu.sh`) without a ping from the laptop (`/api/ping` every 20 s).
+A laptop that sleeps longer than that also stops the app. Without the batch file:
+`ssh -t -L 9100:127.0.0.1:9100 user@gpu-server "SKETCHFADE_IDLE_EXIT=0 bash ~/sketchfade/app/serve_gpu.sh 9100"`
+(no keep-alive pings then, so the idle exit is off).
+
 On a laptop without a GPU, `python server.py` (or double-click `run.bat`) still
 works: generation takes about 10 s per seed on a CPU, and without
 `diffusers`/`peft` the app uses the ShadowDraw retrieval face as target (no

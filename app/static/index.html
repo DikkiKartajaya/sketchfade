@@ -2,85 +2,250 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SketchFade</title>
 <style>
-  /* the board follows the window (480-600 px); drawing without a guide
-     (probes, tests) widens the side column for a larger side reference */
-  body { --side: 190px; --board: max(480px, min(100vh - 150px, 100vw - var(--side) - 390px, 600px));
-         margin: 0; font-family: "Segoe UI", sans-serif; background: #e8e4da; color: #4a4234;
-         display: flex; justify-content: center; gap: 18px; padding: 24px; }
-  body.noguide { --side: 320px; }
-  #left { display: flex; flex-direction: column; gap: 10px; }
-  #board { position: relative; width: var(--board); height: var(--board); background: #f7f2e7;
-           border-radius: 6px; box-shadow: 0 6px 24px rgba(60,50,30,.25); touch-action: none; }
-  #board img, #board canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-  #banner { min-height: 20px; font-weight: 600; color: #8a3b1c; }
-  #panel { width: var(--side); display: flex; flex-direction: column; gap: 10px; font-size: 13px; padding-top: 30px; }
+  /* Palette shared with the participant view (participant.html), so both pages read as one tool. */
+  :root { --ink: #22304f; --accent: #3b4d8f; --accent-soft: #e6ecf7; --warm: #a83a1e; --warm-soft: #f6e4dc;
+          --ok: #2f6b3a; --ok-soft: #e2efe2; --bg: #efebe2; --paper: #fbf8f1; --sheet: #fffdf8;
+          --line: #d8cfbd; --muted: #7d7464; --shadow: 0 2px 8px rgba(40,30,10,.08); }
+  * { box-sizing: border-box; }
+
+  /* Layout. Desktop (>= 1180px): side panel | board | controls. A slim bar above the board holds
+     Help per part (practice) or the probe/test instruction, so the board keeps one size in every
+     mode. The board fills the rest of the window height (480-900 px); drawing without a guide
+     (probes, tests) widens the side panel for a larger side reference (240-320 px, as room allows).
+     Narrower windows: media queries at the end. */
+  body { --side: 220px; --bar: 42px;
+         --board: max(480px, min(100vh - 48px - var(--bar), 100vw - var(--side) - 400px, 900px));
+         margin: 0; min-height: 100vh; padding: 24px; display: flex; justify-content: center;
+         align-items: flex-start; gap: 18px; background: var(--bg); color: var(--ink);
+         font: 14px/1.4 "Segoe UI", system-ui, sans-serif; }
+  body.noguide { --side: clamp(240px, 100vw - 1040px, 320px); }
+  #left { flex: none; display: flex; flex-direction: column; gap: 8px; }
+  #side { display: contents; }
+  #panel { order: -1; }  /* candidates and layers to the left of the board */
+
+  /* board */
+  #board { position: relative; width: var(--board); height: var(--board); background: var(--sheet);
+           border-radius: 14px; box-shadow: 0 8px 28px rgba(40,30,10,.14); touch-action: none;
+           transition: box-shadow .2s; }
+  #board img, #board canvas { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 14px; }
+  body.noguide #board { box-shadow: 0 0 0 3px var(--warm), 0 8px 28px rgba(40,30,10,.14); }  /* no-help mode */
+  /* bar above the board: Help per part while practising, the instruction while probing/testing */
+  #topbar { min-height: 34px; max-width: var(--board); display: flex; align-items: center; }
+  #banner { padding: 5px 14px; border-radius: 999px; background: var(--warm-soft); color: var(--warm); font-weight: 600; }
+  #banner:empty { display: none; }
+  /* drawing grid: an overlay between the guide and the ink, never part of the strokes */
+  #grid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #grid line { vector-effect: non-scaling-stroke; stroke: rgba(59,77,143,.22); stroke-width: 1; }
+  #grid line.c { stroke: rgba(59,77,143,.5); stroke-width: 1.5; }
+  #boardBusy { position: absolute; inset: 0; border-radius: 14px; background: rgba(251,248,241,.85);
+               display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+               padding: 24px; text-align: center; font-weight: 600; color: var(--accent); }
+  .spinner { width: 40px; height: 40px; border-radius: 50%; border: 4px solid var(--accent-soft);
+             border-top-color: var(--accent); animation: spin .9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* side panel (left of the board): candidates, layers, side reference; scrolls on its own if needed */
+  #panel { width: var(--side); display: flex; flex-direction: column; gap: 12px;
+           max-height: calc(100vh - 48px); overflow-y: auto; padding: 2px; }
+  #panel > * { flex: none; }
   #refbox { display: flex; flex-direction: column; gap: 6px; }
-  #ref { width: 160px; height: 160px; background: #fbf8f0; border: 1px solid #c9bfa8; border-radius: 6px; }
-  body.noguide #ref { width: 310px; height: 310px; }
-  .lcard { display: flex; gap: 8px; align-items: center; padding: 3px; border: 2px solid transparent;
-           border-radius: 6px; cursor: pointer; }
-  .lcard.cur { border-color: #c9bfa8; background: #f1ece0; }
-  .lcard img { width: 72px; height: 72px; background: #fbf8f0; border: 1px solid #c9bfa8; border-radius: 4px; }
-  .lcard.off img { opacity: .45; }
+  #ref { width: 160px; height: 160px; background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; }
+  body.noguide #ref { width: 100%; height: auto; aspect-ratio: 1; }
+  #targetBox .muted { font-size: 11.5px; }
+  #targetImg { display: block; width: 120px; height: 120px; border: 1px solid var(--line); border-radius: 10px; }
+  legend[title] { cursor: help; }
+  .lcard { display: flex; gap: 6px; align-items: center; padding: 3px; border: 2px solid transparent;
+           border-radius: 10px; font-size: 13px; }
+  .lpick { flex: 1; min-width: 0; display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  .lpick b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lcard .own { flex: none; min-height: 0; width: 28px; height: 28px; padding: 0; border-radius: 8px;
+                font-size: 14px; font-weight: 400; color: var(--muted); }
+  .lcard .own.on { color: var(--accent); background: var(--accent-soft); border-color: transparent; box-shadow: none; }
+  .lcard:hover { background: #f4f1ea; }
+  .lcard.cur { border-color: var(--accent); background: var(--accent-soft); }
+  .lcard img { flex: none; width: 36px; height: 36px; background: var(--sheet); border: 1px solid var(--line);
+               border-radius: 6px; }
+  .lcard.off img { opacity: .4; }
+  .lthumb { position: relative; flex: none; display: flex; }
+  /* probed: a small check on the thumbnail's corner, so the step name keeps its room */
+  .pmark { position: absolute; right: -5px; bottom: -5px; width: 16px; height: 16px; border-radius: 50%;
+           display: grid; place-items: center; background: var(--ok); color: #fff; font-size: 10px;
+           font-weight: 700; box-shadow: 0 0 0 2px var(--paper); }
+  .lcard input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+  #layerList { display: flex; flex-direction: column; gap: 2px; }
   #choiceList { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .choice { padding: 3px; border: 2px solid transparent; border-radius: 6px; cursor: pointer;
-            background: none; text-align: center; font-size: 12px; }
-  .choice img { width: 100%; aspect-ratio: 1; background: #fbf8f0; border: 1px solid #c9bfa8;
-                border-radius: 4px; display: block; }
-  .choice.cur { border-color: #3b4d8f; background: #e3e8f4; }
-  .choice.low { opacity: .55; }
-  #ui { width: 270px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
-  h1 { font-size: 18px; margin: 0; }
-  fieldset { border: 1px solid #c9bfa8; border-radius: 6px; padding: 8px; display: flex;
-             flex-direction: column; gap: 6px; }
-  legend { font-weight: 600; }
+  .choice { min-height: 0; padding: 3px; border: 2px solid transparent; border-radius: 10px; background: none;
+            display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 12px; font-weight: 400; }
+  .cmeta { display: flex; align-items: center; gap: 5px; }
+  .choice img { width: 100%; aspect-ratio: 1; background: var(--sheet); border: 1px solid var(--line);
+                border-radius: 8px; display: block; }
+  .choice.cur { border-color: var(--accent); background: var(--accent-soft); }
+  .choice.low img { opacity: .6; }
+  .badge { padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .badge.low { background: var(--warm-soft); color: var(--warm); }
+
+  /* controls column */
+  #ui { width: 280px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 48px);
+        overflow-y: auto; padding: 2px 4px 0 2px; }
+  #ui > * { flex: none; }
+  #head { display: flex; align-items: center; gap: 8px; }
+  h1 { font-size: 20px; margin: 0; }
+  #phase { display: flex; flex-wrap: wrap; gap: 6px; color: var(--muted); font-size: 12.5px; }
+  .chip { padding: 2px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); }
+  .chip b { margin-right: 4px; color: var(--muted); font-weight: 600; }
+  fieldset { margin: 0; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 12px;
+             background: var(--paper); box-shadow: var(--shadow); min-width: 0;
+             display: flex; flex-direction: column; gap: 8px; }
+  legend { padding: 0 6px; font-weight: 700; }
+  /* one control box: Study session, Prepare targets, Drawing, Help per part (sections split by lines);
+     stacked in one column here, Study | Prepare over a full-width Drawing on wide screens (below) */
+  #box { display: grid; grid-template-columns: 1fr; background: var(--paper); border: 1px solid var(--line);
+         border-radius: 14px; box-shadow: var(--shadow); }
+  .sec { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 12px 14px 14px;
+         border-top: 1px solid var(--line); }
+  .sec:first-child { border-top: 0; }
+  #drawBox { order: 1; } #prepBox { order: 2; }  /* one column: Prepare last */
+  .sec h2 { margin: 0; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .06em;
+            text-transform: uppercase; }
+  .sec h2[title] { cursor: help; }
+  .sec h2.sub { margin-top: 4px; }
+  .sec h2 .muted { font-weight: 400; letter-spacing: 0; text-transform: none; }
+  .dgrid, .stack { display: flex; flex-direction: column; gap: 8px; }
+  .sec > button, .stack > button { flex: none; }  /* full-width buttons keep their height in a tall row */
   .row { display: flex; gap: 6px; }
-  button, select, input[type=text] { padding: 6px 4px; border: 1px solid #c9bfa8; border-radius: 6px;
-           background: #fbf8f0; color: inherit; }
-  button { flex: 1; cursor: pointer; }
+  .f1 { flex: 0 0 112px; } .f2 { flex: 1 1 0; }
+  #gridN { flex: 0 0 96px; }
+  button, select, input[type=text] { min-height: 40px; padding: 8px 10px; border: 1px solid var(--line);
+           border-radius: 10px; background: #fff; color: inherit; font: inherit; }
+  select, input[type=text] { width: 100%; min-width: 0; font-size: 16px; }
+  .row > select { width: auto; font-size: 15px; padding: 8px 6px; }
+  #prev, #next { flex: 0 0 auto; padding: 8px 10px; white-space: nowrap; }
+  button { flex: 1; cursor: pointer; font-weight: 600; touch-action: manipulation;
+           transition: background .12s, box-shadow .12s, transform .05s; }
+  button:hover:not(:disabled) { background: #f4f1ea; }
+  button:active:not(:disabled) { transform: translateY(1px); }
   button:disabled { opacity: .4; cursor: default; }
-  button.primary { background: #3b4d8f; color: #fff; border-color: #3b4d8f; }
-  .muted { color: #8a8172; font-size: 12px; }
-  .part { margin: 3px 0; display: flex; justify-content: space-between; }
-  .lv { font-weight: 600; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.primary:hover:not(:disabled) { background: #33447f; }
+  button.danger { color: var(--warm); border-color: #e3b9aa; }
+  button.danger:hover:not(:disabled) { background: var(--warm-soft); }
+  button.on { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+  :focus-visible { outline: 3px solid rgba(59,77,143,.45); outline-offset: 2px; }
+  .step { flex: 2; display: flex; align-items: center; justify-content: center; min-height: 40px; padding: 4px 8px;
+          border-radius: 10px; background: var(--accent-soft); font-size: 13px; font-weight: 600; text-align: center; }
+  .penCtl { display: flex; flex-direction: column; gap: 2px; }
+  .penHead { display: flex; align-items: center; justify-content: space-between; }
+  .dotBox { width: 20px; height: 20px; display: grid; place-items: center; }
+  #penDot { display: block; border-radius: 50%; background: var(--ink); }
+  input[type=range] { width: 100%; min-height: 28px; margin: 0; accent-color: var(--accent); }
+  .muted { color: var(--muted); font-size: 12.5px; }
+
+  /* help per part: one row of chips in the bar above the board (detail in each chip's tooltip) */
+  #levelBox { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  #levelBox .lbl { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  #groupLbl { margin-right: 2px; }
+  #levels { display: flex; flex-wrap: wrap; gap: 6px; }
+  .part { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border: 1px solid var(--line);
+          border-radius: 999px; background: var(--paper); font-size: 12px; white-space: nowrap; cursor: help; }
+  .pips { display: flex; gap: 2px; }
+  .pips i { width: 6px; height: 12px; border-radius: 2px; background: var(--line); }
+  .pips i.on { background: var(--accent); }
+  .lv { font-weight: 700; }
+  .tally { font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+  .succ { color: var(--ok); } .fail { color: var(--warm); }
+
+  /* status bar: info / ok / error */
+  #status { position: sticky; bottom: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px;
+            background: var(--paper); box-shadow: 0 -2px 10px rgba(40,30,10,.06); font-size: 13px; }
+  #status:empty { display: none; }
+  #status.ok { background: var(--ok-soft); border-color: #b9d6bb; color: var(--ok); }
+  #status.error { background: var(--warm-soft); border-color: #e3b9aa; color: var(--warm); }
+
   .hidden { display: none !important; }
-  #summaryBox { position: fixed; inset: 0; background: rgba(40,34,24,.55); display: flex;
-                align-items: center; justify-content: center; }
-  #summaryCard { display: flex; gap: 18px; padding: 18px; background: #e8e4da; border-radius: 6px; }
-  #stack { width: 480px; height: 480px; background: #f7f2e7; border-radius: 6px; }
-  #summaryUi { width: 300px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+
+  /* session summary */
+  #summaryBox { position: fixed; inset: 0; z-index: 10; padding: 16px; background: rgba(34,48,79,.45);
+                display: flex; align-items: center; justify-content: center; }
+  #summaryCard { display: flex; flex-wrap: wrap; gap: 18px; max-height: 100%; overflow: auto; padding: 18px;
+                 background: var(--bg); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  #stack { flex: 0 1 480px; max-width: 100%; aspect-ratio: 1; height: auto; background: var(--sheet); border-radius: 12px; }
+  #summaryUi { flex: 1 1 260px; max-width: 320px; display: flex; flex-direction: column; gap: 10px; }
   .thumb { display: flex; gap: 8px; align-items: center; }
-  .thumb canvas { width: 120px; height: 120px; background: #fbf8f0; border: 1px solid #c9bfa8; border-radius: 6px; }
+  .thumb canvas { flex: none; width: 120px; height: 120px; background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; }
+
+  /* wide (>= 1500px): the control box widens to two columns, Study session | Prepare targets on
+     top, Drawing and Help per part across the full width */
+  @media (min-width: 1500px) {
+    body { --board: max(480px, min(100vh - 48px - var(--bar), 100vw - var(--side) - 680px, 900px)); }
+    #ui { width: 560px; }
+    #box { grid-template-columns: 1fr 1fr; }
+    #prepBox { order: 0; border-top: 0; border-left: 1px solid var(--line); }
+    .sec.wide { grid-column: 1 / -1; }
+    .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; align-items: start; }
+  }
+  /* medium (small laptop, landscape tablet): board with the panel under it | controls on the right */
+  @media (max-width: 1179px) {
+    body { --board: max(320px, min(100vh - 48px - var(--bar), 100vw - 396px, 900px)); display: grid;
+           grid-template-columns: var(--board) 330px; grid-template-areas: "left ui" "panel ui"; }
+    #left { grid-area: left; }
+    #panel { grid-area: panel; width: 100%; max-height: none; overflow: visible; }
+    body.noguide #ref { width: min(310px, 100%); }
+    #ui { grid-area: ui; width: 100%; position: sticky; top: 24px; }
+    #layerList { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .lcard { flex-direction: column; align-items: stretch; gap: 4px; font-size: 12.5px; }
+    .lpick { flex-direction: column; align-items: stretch; gap: 4px; }
+    .lcard img { width: 100%; height: auto; aspect-ratio: 1; }
+    .lcard .own { align-self: flex-end; }
+    .lthumb { display: block; }
+    #choiceList { grid-template-columns: repeat(4, 1fr); }
+    #layerBox .row { max-width: 360px; }
+  }
+  /* narrow (portrait tablet, phone): one column: board, controls, panel */
+  @media (max-width: 759px) {
+    body { --board: min(100vw - 32px, 900px); grid-template-columns: var(--board);
+           grid-template-areas: "left" "ui" "panel"; padding: 16px; }
+    #ui { position: static; max-height: none; overflow: visible; }
+    body.noguide { grid-template-areas: "left" "panel" "ui"; }  /* side reference right under the board */
+  }
 </style>
 </head>
 <body>
 <div id="left">
-  <div id="banner"></div>
+  <div id="topbar">
+    <div id="banner"></div>
+    <div id="levelBox">
+      <span class="lbl" title="help level per face part: L3 most help ... L0 none; + success, - fail">Help</span>
+      <span class="muted" id="groupLbl"></span>
+      <div id="levels"></div>
+    </div>
+  </div>
   <div id="board">
     <img id="ghost" alt="">
+    <svg id="grid" class="hidden" viewBox="0 0 480 480" preserveAspectRatio="none" aria-hidden="true"></svg>
     <canvas id="ink" width="480" height="480"></canvas>
+    <div id="boardBusy" class="hidden"><div class="spinner"></div><div id="busyText"></div></div>
   </div>
 </div>
+<div id="side">
 <div id="panel">
   <div id="targetBox" class="hidden">
-    <img id="targetImg" alt="" style="width:160px; height:160px; border:1px solid #c9bfa8; border-radius:6px">
+    <img id="targetImg" alt="">
     <div class="muted">Generated target (development only, SHOW_TARGET in server.py)</div>
   </div>
   <fieldset id="choiceBox" class="hidden">
-    <legend>Candidates</legend>
-    <div class="muted">Four hidden targets from one sketch, shown as line drawings.
-      Pick the one to practise; Regenerate gives four new ones.</div>
+    <legend title="Four hidden targets from one sketch, shown as line drawings. Pick the one to practise; Regenerate gives four new ones.">Candidates</legend>
     <div id="choiceList"></div>
   </fieldset>
   <fieldset id="layerBox">
-    <legend>Layers</legend>
-    <div class="muted">Tick a layer to show it on the canvas, untick to hide it.</div>
+    <legend title="Tick a layer to show it on the canvas, untick to hide it.">Layers</legend>
     <div id="layerList"></div>
     <div class="row">
       <button id="showAll">Show all</button>
-      <button id="clearBg">Clear background</button>
+      <button id="clearBg">Hide all</button>
     </div>
   </fieldset>
   <div id="refbox">
@@ -90,15 +255,16 @@
   </div>
 </div>
 <div id="ui">
-  <h1>SketchFade</h1>
-  <div id="phase" class="muted"></div>
+  <div id="head"><h1>SketchFade</h1></div>
+  <div id="phase"></div>
 
-  <fieldset id="studyBox">
-    <legend>Study session</legend>
-    <input type="text" id="pid" placeholder="participant id, e.g. P01">
+  <div id="box">
+  <section id="studyBox" class="sec">
+    <h2>Study session</h2>
+    <input type="text" id="pid" placeholder="Participant ID, e.g. P01" autocomplete="off">
     <div class="row">
-      <select id="group" style="flex:1"><option>adaptive</option><option>fixed</option></select>
-      <select id="pkg" style="flex:2"></select>
+      <select id="group" class="f1"><option>adaptive</option><option>fixed</option></select>
+      <select id="pkg" class="f2"></select>
     </div>
     <button id="start" class="primary">Start / resume</button>
     <select id="task" disabled>
@@ -108,61 +274,70 @@
       <option value="retention">delayed retention test</option>
       <option value="transfer">unseen portrait transfer</option>
     </select>
-  </fieldset>
+  </section>
 
-  <fieldset id="drawBox">
-    <legend>Drawing</legend>
-    <div class="row">
-      <button id="prev" disabled>&larr;</button>
-      <button id="layer" disabled style="flex:2">&ndash;</button>
-      <button id="next" disabled title="ends the layer with an unassisted probe">&rarr;</button>
-    </div>
-    <div class="row">
-      <button id="check" disabled>Check</button>
-      <button id="clear">Clear</button>
-    </div>
-    <button id="probe" disabled>Probe this layer</button>
-    <button id="submit" class="primary hidden">Submit probe</button>
-    <button id="export" class="primary hidden">Finish test drawing</button>
-    <button id="summary" disabled>Session summary</button>
-    <label>Pen width: <span id="penVal">3</span> px
-      <input type="range" id="pen" min="1" max="12" value="3" style="width:100%"></label>
-  </fieldset>
-
-  <fieldset id="levelBox">
-    <legend>Help per part <span class="muted" id="groupLbl"></span></legend>
-    <div id="levels"></div>
-  </fieldset>
-
-  <details id="prepBox">
-    <summary><b>Prepare targets</b> (before recruitment)</summary>
-    <fieldset>
-      <div class="muted">Sketch a rough face, add a prompt, pick a style, Generate. Save packages
-        that pass the landmark check, then review them below.</div>
-      <input type="text" id="prompt" placeholder="prompt, e.g. old man with a beard">
+  <section id="prepBox" class="sec">
+      <h2 title="Sketch a rough face, add a prompt, pick a style, Generate. Save packages that pass the landmark check, then review them below.">Prepare targets <span class="muted">(before recruitment)</span></h2>
+      <input type="text" id="prompt" placeholder="Prompt, e.g. old man with a beard">
       <select id="style">
         <option value="pencil">pencil drawing style</option>
         <option value="realistic">realistic (photo) style</option>
         <option value="anime">anime style</option>
       </select>
       <div class="row">
-        <button id="pin">Generate target</button>
+        <button id="pin" class="primary" title="generate 4 hidden candidate targets from the sketch">Generate</button>
         <button id="regen" disabled>Regenerate</button>
       </div>
       <div id="conf" class="muted"></div>
-      <button id="savePkg" disabled>Save package</button>
-      <button id="newSketch">New sketch</button>
-      <div class="muted"><b>Expert review</b>: an illustrator checks a saved package;
-        approved packages can be opened under Study session.</div>
+      <div class="row">
+        <button id="savePkg" disabled>Save package</button>
+        <button id="newSketch">New sketch</button>
+      </div>
+      <h2 class="sub" title="An illustrator checks a saved package; approved packages can be opened under Study session.">Expert review</h2>
       <select id="pending"></select>
-      <input type="text" id="reviewer" placeholder="reviewer name">
+      <input type="text" id="reviewer" placeholder="Reviewer name">
       <div class="row">
         <button id="approve">Approve</button>
-        <button id="reject">Reject</button>
+        <button id="reject" class="danger">Reject</button>
       </div>
-    </fieldset>
-  </details>
-  <div id="status" class="muted"></div>
+  </section>
+
+  <section id="drawBox" class="sec wide">
+    <h2>Drawing</h2>
+    <div class="dgrid">
+      <div class="row">
+        <button id="prev" disabled>&larr; Prev</button>
+        <div id="layer" class="step">&ndash;</div>
+        <button id="next" disabled title="go to the next step">Next &rarr;</button>
+      </div>
+      <div class="row">
+        <button id="check" disabled title="shows the guide briefly">Check</button>
+        <button id="clear">Clear</button>
+      </div>
+      <div class="stack">
+        <button id="probe" disabled title="optional: redraw this step without its guide; help levels change only through probes">Probe this layer</button>
+        <button id="submit" class="primary hidden">Submit probe</button>
+        <button id="export" class="primary hidden">Finish test drawing</button>
+      </div>
+      <div class="stack">
+        <button id="summary" disabled>Session summary</button>
+      </div>
+      <label class="penCtl">
+        <span class="penHead"><span>Pen width: <b id="penVal">3</b> px</span><span class="dotBox"><i id="penDot"></i></span></span>
+        <input type="range" id="pen" min="1" max="12" value="3"></label>
+      <div class="row">
+        <button id="gridBtn" title="grid over the canvas (off during probes and tests)">Grid</button>
+        <select id="gridN" title="grid size">
+          <option value="3">3 &times; 3</option>
+          <option value="4" selected>4 &times; 4</option>
+          <option value="8">8 &times; 8</option>
+        </select>
+      </div>
+    </div>
+  </section>
+  </div>
+  <div id="status"></div>
+</div>
 </div>
 
 <div id="summaryBox" class="hidden">
@@ -188,9 +363,17 @@ let mode = "sketch", strokes = [], cur = null, st = null, lastGhost = "", practi
 // current layer is drawn on top. Probes and tests start from a blank canvas.
 let byLayer = {};
 const PREV_INK = "rgba(36, 52, 110, 0.35)";
-function resetDrawing() { strokes = []; practice = []; byLayer = {}; }
-function keepPrevious() {  // earlier layers shown only while practising with help
-  return mode === "draw" && st && st.task === "practice" && st.probe === null;
+// Probes are optional here: Next / Prev only move between steps, and a probe runs only when
+// "Probe this layer" is pressed (help levels change only through probes). The participant
+// view keeps its fixed probe schedule (Study Instruments v0.4).
+const FILLED = ["shading", "shadow"];  // tone layers (ghost.FILLED)
+let probed = new Set();  // layers probed since the last Start, task change or new target
+let ownHidden = new Set();  // steps whose own strokes are hidden on the canvas (on screen only)
+function resetDrawing() { strokes = []; practice = []; byLayer = {}; probed = new Set(); ownHidden = new Set(); }
+const ownShown = () => Object.entries(byLayer)  // own earlier steps drawn faint right now
+  .filter(([i, list]) => +i !== st.layer && !ownHidden.has(+i) && list.length).map(([i]) => st.layers[+i]);
+function keepPrevious() {  // own strokes of the other steps: while practising, and as probe context
+  return mode === "draw" && st && st.task === "practice";
 }
 async function gotoLayer(next) {  // store this layer's strokes, load the next layer's
   byLayer[st.layer] = strokes;
@@ -198,6 +381,13 @@ async function gotoLayer(next) {  // store this layer's strokes, load the next l
   show(await post("/api/layer", { layer: next }));
   redraw();
 }
+
+// Status bar under the controls; kind: "info" | "ok" | "error" (colour only).
+function say(text, kind = "info") {
+  $("status").textContent = text || "";
+  $("status").className = text ? kind : "";
+}
+const esc = v => String(v ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 async function post(url, body = {}) {
   let j;
@@ -207,7 +397,7 @@ async function post(url, body = {}) {
   } catch (err) {
     j = { error: "server unreachable: " + err };
   }
-  if (j.error) { $("status").textContent = j.error; console.error(url, j.error); }
+  if (j.error) { say(j.error, "error"); console.error(url, j.error); }
   return j;
 }
 
@@ -239,8 +429,10 @@ function redraw() {
   };
   if (keepPrevious())
     for (const [i, list] of Object.entries(byLayer))
-      if (+i !== st.layer) line(list, PREV_INK);
-  line(strokes.concat(cur ? [cur] : []), "#24346e");
+      if (+i !== st.layer && !ownHidden.has(+i)) line(list, PREV_INK);
+  // the current step's own strokes can be hidden too (not in a probe: the redraw always shows)
+  const hideCurrent = mode === "draw" && st && st.probe === null && ownHidden.has(st.layer);
+  line((hideCurrent ? [] : strokes).concat(cur ? [cur] : []), "#24346e");
 }
 
 const TEST_NAMES = { baseline: "Baseline test", post: "Immediate post-test",
@@ -249,14 +441,20 @@ const TEST_NAMES = { baseline: "Baseline test", post: "Immediate post-test",
 function show(s) {
   if (!s || s.error) return;
   st = s; lastGhost = s.ghost; setGhost(s.ghost);
-  $("ref").src = png(s.ref);
+  // side reference: a probe of a tone step shows the filled layer (the dark areas to fill),
+  // not the outline it is scored by; the caption names the step
+  const toneProbe = s.probe !== null && FILLED.includes(s.layers[s.probe]);
+  $("ref").src = png(toneProbe ? s.thumbs[s.probe] : s.ref);
+  $("refNote").innerHTML = s.probe !== null
+    ? `Side reference: ${s.probe + 1}. ${esc(s.layers[s.probe])}.<br>Draw it on the large canvas.`
+    : "Side reference: the step to draw.<br>Draw it on the large canvas.";
   $("targetBox").classList.toggle("hidden", !s.target_img);
   $("targetImg").src = png(s.target_img);
   const inStudy = !!s.participant, test = s.task !== "practice", probing = s.probe !== null;
   $("layer").textContent = probing ? `probe: ${s.layers[s.probe]}`
     : test ? "test drawing" : `${s.layer + 1}. ${s.layers[s.layer]}`;
   $("prev").disabled = probing || test || s.layer === 0;
-  $("next").disabled = probing || test;
+  $("next").disabled = probing || test || s.layer === s.layers.length - 1;
   $("check").disabled = !s.helped || !s.levels.some(p => p.level === 1);
   $("probe").disabled = probing || test;
   $("probe").classList.toggle("hidden", probing);
@@ -270,37 +468,71 @@ function show(s) {
   $("savePkg").disabled = !!s.package || !s.valid;
   // the help panel is for the experimenter; hidden during tests and probes
   $("levelBox").classList.toggle("hidden", test || probing);
-  // layers panel in practice and preview; tests and probes only get the side reference
-  $("layerBox").classList.toggle("hidden", test || probing);
+  // layers panel in practice, preview and probes (there: other steps' guides, off at the
+  // start); tests only get the side reference
+  $("layerBox").classList.toggle("hidden", test);
   $("refbox").classList.toggle("hidden", !(test || probing));
   document.body.classList.toggle("noguide", test || probing);
   $("layerList").innerHTML = s.layers.map((name, i) => {
     const on = s.visible.includes(i), cur = i === s.layer;
-    return `<label class="lcard${cur ? " cur" : ""}${on ? "" : " off"}">
-      <img src="${png(s.thumbs[i])}" alt="">
-      <span><input type="checkbox" data-layer="${i}" ${on ? "checked" : ""}>
-        <b style="color:${s.colors[i]}">${i + 1}. ${name}</b>
-        ${cur ? '<br><span class="muted">current step</span>' : ""}</span></label>`;
+    // checkbox: the step's guide on the canvas (in a probe: other steps only);
+    // pencil: my own strokes of that step on the canvas (on screen only, never deleted)
+    // own strokes: the current step's are the ones on the canvas now (not during its probe)
+    const mine = cur ? !probing && strokes.length > 0 : !!(byLayer[i] && byLayer[i].length);
+    return `<div class="lcard${cur ? " cur" : ""}${on ? "" : " off"}"${cur ? ' title="current step"' : ""}>
+      <label class="lpick"><input type="checkbox" data-layer="${i}" ${on ? "checked" : ""}${probing && cur ? " disabled" : ""}>
+      <span class="lthumb"><img src="${png(s.thumbs[i])}" alt="">
+      ${probed.has(i) ? '<span class="pmark" title="probed">&#10003;</span>' : ""}</span>
+      <b style="color:${s.colors[i]}">${i + 1}. ${name}</b></label>
+      <button class="own${mine && !ownHidden.has(i) ? " on" : ""}" data-own="${i}" ${mine ? "" : "disabled"}
+        title="my strokes of this step on the canvas: shown / hidden">&#9998;</button></div>`;
   }).join("");
   const choices = s.choices || [];
   $("choiceBox").classList.toggle("hidden", !choices.length || probing);
   $("choiceList").innerHTML = choices.map((c, i) =>
-    `<button class="choice${i === s.choice ? " cur" : ""}${c.valid ? "" : " low"}" data-choice="${i}">
+    `<button class="choice${i === s.choice ? " cur" : ""}${c.valid ? "" : " low"}" data-choice="${i}" title="candidate ${i + 1}, seed ${c.seed}">
        <img src="${png(c.thumb)}" alt="candidate ${i + 1}">
-       ${i + 1} · seed ${c.seed} · ${c.valid ? "ok" : "LOW"} ${c.conf.toFixed(2)}</button>`).join("");
+       <span class="cmeta"><b>${i + 1}</b><span class="badge ${c.valid ? "ok" : "low"}">${c.valid ? "OK" : "LOW"} ${c.conf.toFixed(2)}</span></span></button>`).join("");
   $("groupLbl").textContent = `(${s.group})`;
+  // help per part as chips in the bar above the board; the help text is in each chip's tooltip
   $("levels").innerHTML = s.levels.map(p =>
-    `<div class="part"><span><b>${p.part}</b> <span class="muted">${p.help}</span></span>
-     <span class="lv">L${p.level}<span class="muted"> ${"+".repeat(p.succ)}${"-".repeat(p.fail)}</span></span></div>`).join("");
+    `<span class="part" title="${esc(`${p.part}: ${p.help}`)}"><b>${p.part}</b>
+       <span class="pips">${[1, 2, 3].map(k => `<i class="${k <= p.level ? "on" : ""}"></i>`).join("")}</span>
+       <span class="lv">L${p.level}</span>${p.succ || p.fail ? `<span class="tally"><span class="succ">${"+".repeat(p.succ)}</span><span class="fail">${"-".repeat(p.fail)}</span></span>` : ""}</span>`).join("");
   if (s.confidence) {
     const c = Object.entries(s.confidence).map(([k, v]) => `${k} ${v.toFixed(2)}`).join(" · ");
     $("conf").textContent = `landmark confidence: ${c} (min ${s.conf_min}) → ${s.valid ? "ok" : "LOW, regenerate"}`;
   }
-  $("banner").textContent = probing ? "Probe: redraw this step on the blank canvas, without help. Then Submit."
+  $("banner").textContent = probing ? "Probe: redraw this step without its guide (other steps can be shown under Layers). Then Submit."
     : test ? `${TEST_NAMES[s.task]}: draw the portrait without help. Then Finish.` : "";
-  $("phase").textContent = inStudy ? `${s.participant} · ${s.group} · ${s.task} · target ${s.target}`
-                                   : `Preview of target ${s.target} (fixed L3)`;
+  // session chips; the group is left out while a probe or test is drawn (the participant may
+  // be drawing here, e.g. the Transfer test), so the condition is not on screen
+  const chip = (k, v) => `<span class="chip"><b>${k}</b>${esc(v)}</span>`;
+  $("phase").innerHTML = inStudy
+    ? chip("participant", s.participant) + (test || probing ? "" : chip("group", s.group))
+      + chip("task", s.task) + chip("target", s.target)
+    : chip("preview", s.target) + chip("help", "fixed L3");
+  renderGrid();
 }
+
+// --- drawing grid: on-screen aid only (never in strokes, exports or logs) --------------
+// Off and disabled while drawing without help (probes, tests), so those stay unassisted;
+// the researcher's choice comes back afterwards.
+let gridWanted = false;
+function renderGrid() {
+  const noHelp = document.body.classList.contains("noguide"), on = gridWanted && !noHelp;
+  $("gridBtn").disabled = $("gridN").disabled = noHelp;
+  $("gridBtn").classList.toggle("on", on);
+  $("grid").classList.toggle("hidden", !on);
+  if (!on) return;
+  const n = +$("gridN").value, line = (x1, y1, x2, y2, c = "") =>
+    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${c}"/>`;
+  let svg = "";
+  for (let i = 1; i < n; i++) { const p = UI * i / n; svg += line(p, 0, p, UI) + line(0, p, UI, p); }
+  $("grid").innerHTML = svg + line(UI / 2, 0, UI / 2, UI, "c") + line(0, UI / 2, UI, UI / 2, "c");  // centre cross
+}
+$("gridBtn").onclick = () => { gridWanted = !gridWanted; renderGrid(); };
+$("gridN").onchange = () => { gridWanted = true; renderGrid(); };
 
 function setMode(m) {
   mode = m;
@@ -309,10 +541,11 @@ function setMode(m) {
   if (m === "sketch") {
     document.body.classList.remove("noguide");
     $("phase").textContent = "Start a study session, or open Prepare targets. "
-      + "The construction layers appear after Generate target.";
+      + "The construction layers appear after Generate.";
     $("layer").innerHTML = "&ndash;"; $("ref").src = ""; $("banner").textContent = "";
     $("levelBox").classList.add("hidden");
   }
+  renderGrid();
 }
 
 // rough-sketch phase (prepare targets): one shadow request at a time, newest strokes win.
@@ -333,14 +566,22 @@ async function onStroke(s) {
   const r = await post("/api/stroke", { pts: s.pts, w: s.w });
   if (r.error) return;
   s.pts = r.pts; redraw(); show(r);
-  $("status").textContent = r.part ? `last stroke: ${r.part}, error ${r.err}px` : "";
+  say(r.part ? `Last stroke: ${r.part}, error ${r.err}px` : "");
 }
 
 const pos = e => {
   const b = ink.getBoundingClientRect();
   return [(e.clientX - b.left) * UI / b.width, (e.clientY - b.top) * UI / b.height];
 };
-ink.onpointerdown = e => { ink.setPointerCapture(e.pointerId); cur = { pts: [pos(e)], w: +$("pen").value }; };
+ink.onpointerdown = e => {
+  ink.setPointerCapture(e.pointerId);
+  if (st && st.probe === null && ownHidden.has(st.layer)) {  // never draw blind: show this step again
+    ownHidden.delete(st.layer);
+    const b = document.querySelector(`[data-own="${st.layer}"]`);
+    if (b) b.classList.add("on");
+  }
+  cur = { pts: [pos(e)], w: +$("pen").value };
+};
 ink.onpointermove = e => { if (cur) { cur.pts.push(pos(e)); redraw(); } };
 ink.onpointerup = () => {
   if (!cur) return;
@@ -363,7 +604,6 @@ async function loadPackages(select) {
     ? pending.map(m => `<option value="${m.id}">${label(m)}</option>`).join("")
     : `<option value="">no package waiting for review</option>`;
   if (select && ok.some(m => m.id === select)) $("pkg").value = select;
-  if (!ok.length) $("prepBox").open = true;  // nothing to study yet: prepare first
   $("start").disabled = !ok.length;
   $("approve").disabled = $("reject").disabled = !pending.length;
 }
@@ -372,9 +612,8 @@ async function review(approve) {
                                                 reviewer: $("reviewer").value });
   if (r.error) return;
   await loadPackages(r.package);
-  $("status").textContent = approve
-    ? `package ${r.package} approved: enter a participant id and press Start under Study session`
-    : `package ${r.package} rejected`;
+  if (approve) say(`Package ${r.package} approved: enter a participant ID and press Start under Study session`, "ok");
+  else say(`Package ${r.package} rejected`);
 }
 $("approve").onclick = () => review(true);
 $("reject").onclick = () => review(false);
@@ -383,37 +622,35 @@ $("start").onclick = async () => {
   if (r.error) return;
   resetDrawing(); setMode("draw"); show(r); redraw();
   $("group").value = r.group;  // a returning participant keeps their group
-  $("status").textContent = `session ${r.participant} (${r.group}) on ${r.package}`;
+  say(`Session ${r.participant} (${r.group}) on ${r.package}`, "ok");
 };
 $("task").onchange = async () => {
   const r = await post("/api/task", { task: $("task").value });
   if (r.error) return;
   resetDrawing(); show(r); redraw();
-  $("status").textContent = "";
+  say("");
 };
 
 // --- practice: layers, Check, probes -----------------------------------------
-async function startProbe(then) {
-  practice = strokes; strokes = [];                // blank area for the redraw
+// A probe (only on request): this step's practice drawing is put aside and the step is
+// redrawn without its guide; after Submit the practice drawing comes back, same step.
+$("probe").onclick = async () => {
+  practice = strokes; strokes = [];
   const r = await post("/api/probe/start");
   if (r.error) { strokes = practice; redraw(); return; }
-  afterProbe = then; show(r); redraw();            // probing: earlier layers hidden too
-  $("status").textContent = "";
-}
-let afterProbe = null;
-$("probe").onclick = () => startProbe(null);
-$("next").onclick = () => startProbe(st.layer + 1 < st.layers.length ? st.layer + 1 : null);
+  show(r); redraw();
+  say("");
+};
+$("next").onclick = () => { if (st.layer + 1 < st.layers.length) gotoLayer(st.layer + 1); };
 $("submit").onclick = async () => {
-  const r = await post("/api/probe/submit", { strokes });
+  const layer = st.probe;
+  const r = await post("/api/probe/submit", { strokes, own_shown: ownShown() });  // context is logged
   if (r.error) return;
+  probed.add(layer);
   const moved = r.changes.map(c => `${c.part} L${c.from}→L${c.to}`).join(", ");
-  $("status").textContent = "probe saved" + (moved ? `; help changed: ${moved}` : "");
+  say("Probe saved" + (moved ? `; help changed: ${moved}` : ""), "ok");
   strokes = practice; practice = [];               // the practice drawing comes back
-  show(r);
-  const next = afterProbe;
-  afterProbe = null;
-  if (next !== null) await gotoLayer(next);        // ... and stays under the next layer
-  else redraw();
+  show(r); redraw();
 };
 $("prev").onclick = () => gotoLayer(st.layer - 1);
 $("layer").onclick = () => {};
@@ -421,12 +658,21 @@ $("check").onclick = async () => {
   const r = await post("/api/check");
   if (r.error) return;
   setGhost(r.ghost);
-  setTimeout(() => setGhost(lastGhost), CHECK_MS);
+  $("check").classList.add("on");                  // pressed look while the guide is shown
+  setTimeout(() => { setGhost(lastGhost); $("check").classList.remove("on"); }, CHECK_MS);
 };
 // --- layers panel: which layers are on the canvas ---------------------------------
 async function setVisible(v) { show(await post("/api/visible", { visible: v })); }
 $("layerList").onchange = () => setVisible(
   [...document.querySelectorAll("#layerList input:checked")].map(c => +c.dataset.layer));
+$("layerList").onclick = e => {  // pencil: show / hide my own strokes of that step
+  const b = e.target.closest("[data-own]");
+  if (!b) return;
+  const i = +b.dataset.own;
+  if (ownHidden.has(i)) ownHidden.delete(i); else ownHidden.add(i);
+  b.classList.toggle("on", !ownHidden.has(i));
+  redraw();
+};
 $("showAll").onclick = () => setVisible(st.layers.map((_, i) => i));
 $("clearBg").onclick = () => setVisible([]);
 
@@ -470,27 +716,33 @@ $("summary").onclick = async () => {
   drawStack();
   $("summaryBox").classList.remove("hidden");
 };
-$("closeSummary").onclick = () => $("summaryBox").classList.add("hidden");
+const closeSummary = () => $("summaryBox").classList.add("hidden");
+$("closeSummary").onclick = closeSummary;
+$("summaryBox").onclick = e => { if (e.target === $("summaryBox")) closeSummary(); };  // backdrop
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSummary(); });
 
 // --- formal tests -------------------------------------------------------------
 $("export").onclick = async () => {
-  if (!strokes.length) return void ($("status").textContent = "nothing drawn yet");
+  if (!strokes.length) return void say("Nothing drawn yet", "error");
   const r = await post("/api/export", { strokes });
   if (r.error) return;
   strokes = []; redraw();
-  $("status").textContent = `drawing saved (code ${r.code})`;
+  say(`Drawing saved (code ${r.code})`, "ok");
 };
 
 // --- prepare targets ----------------------------------------------------------
 async function generating(url, body) {
   const btns = [...document.querySelectorAll("button")], was = btns.map(b => b.disabled);
   btns.forEach(b => b.disabled = true);
-  $("status").textContent = "generating and checking 4 hidden candidate targets ...";
+  const msg = "Generating and checking 4 hidden candidate targets …";
+  say(msg); $("busyText").textContent = msg;
+  $("boardBusy").classList.remove("hidden");
   const r = await post(url, body);
+  $("boardBusy").classList.add("hidden");
   btns.forEach((b, i) => b.disabled = was[i]);
-  if (!r.error) $("status").textContent = r.valid
-    ? "candidates ready: the best one is selected, pick another under Candidates"
-    : "no candidate passed the landmark check: regenerate or change the sketch";
+  if (!r.error) say(r.valid
+    ? "Candidates ready: the best one is selected, pick another under Candidates"
+    : "No candidate passed the landmark check: regenerate or change the sketch", r.valid ? "ok" : "error");
   return r;
 }
 $("pin").onclick = async () => {
@@ -509,12 +761,13 @@ $("choiceList").onclick = async e => {
   const r = await post("/api/choose", { index: +b.dataset.choice });
   if (r.error) return;
   resetDrawing(); show(r); redraw();
-  $("status").textContent = `candidate ${r.choice + 1} selected` + (r.valid ? "" : " (low confidence: cannot be saved)");
+  say(`Candidate ${r.choice + 1} selected` + (r.valid ? "" : " (low confidence: cannot be saved)"),
+      r.valid ? "ok" : "error");
 };
 $("savePkg").onclick = async () => {
   const r = await post("/api/package/save");
   if (r.error) return;
-  $("status").textContent = `saved package ${r.package}: review it below (Expert review)`;
+  say(`Saved package ${r.package}: review it below (Expert review)`, "ok");
   await loadPackages();
   $("pending").value = r.package;
 };
@@ -522,7 +775,13 @@ $("newSketch").onclick = async () => {
   resetDrawing(); st = null; setMode("sketch"); redraw(); setGhost("");
   await post("/api/shadow", { strokes });
 };
-$("pen").oninput = () => { $("penVal").textContent = $("pen").value; };
+function penPreview() {  // number + a dot about the size of the line on the board
+  const w = +$("pen").value, d = Math.max(2, Math.round(w * 1.25)) + "px";
+  $("penVal").textContent = w;
+  $("penDot").style.width = $("penDot").style.height = d;
+}
+$("pen").oninput = penPreview;
+penPreview();
 
 setMode("sketch");
 loadPackages();

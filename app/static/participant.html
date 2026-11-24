@@ -54,6 +54,13 @@
   #refCard { background: var(--paper); border-radius: 14px; padding: 10px; }
   #refCard img { width: 100%; aspect-ratio: 1; display: block; }
   #refCard div { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  /* probe: guides of the other steps, off at the start, one button each */
+  #guideBox { display: flex; flex-direction: column; gap: 8px; }
+  #guideBox .gl { font-size: 14px; color: var(--muted); }
+  #guideBtns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .gbtn { padding: 10px 14px; font-size: 15px; background: var(--paper); color: var(--ink);
+          box-shadow: 0 2px 6px rgba(40,30,10,.1); }
+  .gbtn.on { background: #e6ecf7; box-shadow: inset 0 0 0 2px var(--accent); }
   #note { min-height: 48px; font-size: 16px; padding: 12px 14px; border-radius: 12px; background: #e6ecf7;
           color: var(--ink); }
   #note:empty { visibility: hidden; }
@@ -127,6 +134,10 @@
       <h2 id="task"></h2>
       <p id="hint"></p>
       <div id="refCard"><img id="ref" alt=""><div>Reference</div></div>
+      <div id="guideBox" class="hidden">
+        <div class="gl">Show the guide of another step:</div>
+        <div id="guideBtns"></div>
+      </div>
       <div id="note"></div>
     </div>
   </main>
@@ -256,7 +267,8 @@ function redraw() {
       ctx.stroke();
     }
   };
-  if (phase === "practice" && st)  // earlier steps stay under the current one
+  // earlier steps stay under the current one, also during a probe (the drawer's own construction)
+  if ((phase === "practice" || phase === "probe") && st)
     for (const [i, list] of Object.entries(byLayer)) if (+i !== st.layer) draw(list, PREV_INK);
   draw(strokes.concat(cur ? [cur] : []), "#22304f");
   if (rub) {  // eraser outline under the pen while rubbing
@@ -359,7 +371,8 @@ function render() {
     $("main").className = "";
   } else if (phase === "probe") {
     $("task").textContent = "Now on your own";
-    $("hint").textContent = `Draw the same step again on the empty page, without the guide on top. Use the reference picture: ${hint.charAt(0).toLowerCase() + hint.slice(1)}`;
+    $("hint").textContent = `Draw the same step again, without its guide on top. Your earlier steps stay faint `
+      + `to help you place it. Use the reference picture: ${hint.charAt(0).toLowerCase() + hint.slice(1)}`;
     $("main").textContent = "Done";
     $("main").className = "warm";
   } else {
@@ -369,6 +382,7 @@ function render() {
     $("main").className = "warm";
   }
   $("refCard").classList.toggle("hidden", phase === "practice");  // guide is on the canvas in practice
+  renderGuideBtns();
   paintGuides();
   updateButtons();
   redraw();
@@ -382,10 +396,33 @@ function renderWarmup() {  // stylus practice: blank canvas, no guide, no steps
   $("main").textContent = "I'm done practising";
   $("main").className = "";
   $("refCard").classList.add("hidden");
+  $("guideBox").classList.add("hidden");
   $("ghost").removeAttribute("src");
   updateButtons();
   redraw();
 }
+// Probe: the guide of any other step can be shown (off at the start, never the probed
+// step; the server keeps it apart from practice and logs it with the probe).
+function renderGuideBtns() {
+  const on = phase === "probe";
+  $("guideBox").classList.toggle("hidden", !on);
+  if (!on) return;
+  $("guideBtns").innerHTML = st.layers.map((name, k) => k === st.probe ? "" :
+    `<button class="gbtn${st.visible.includes(k) ? " on" : ""}" data-g="${k}">${(STEP[name] || [name])[0]}</button>`).join("");
+}
+$("guideBtns").onclick = async e => {
+  const b = e.target.closest("[data-g]");
+  if (!b || phase !== "probe") return;
+  const k = +b.dataset.g;
+  const want = st.visible.includes(k) ? st.visible.filter(x => x !== k) : st.visible.concat(k);
+  const r = await post("/api/visible", { visible: want });
+  if (r.error) return note(r.error);
+  st = r; renderGuideBtns(); paintGuides();
+};
+// own earlier steps drawn faint right now (logged with the probe)
+const ownShown = () => Object.entries(byLayer)
+  .filter(([i, list]) => +i !== st.layer && list.length).map(([i]) => st.layers[+i]);
+
 function updateButtons() {
   const anyL1 = st && st.helped && st.levels.some(p => p.level === 1);
   $("check").classList.toggle("hidden", !(phase === "practice" && anyL1));
@@ -441,7 +478,8 @@ $("main").onclick = async () => {
   if (phase === "practice") {             // end of a step: unassisted redraw, line steps only
     if (!PROBE_LAYERS.includes(st.layers[st.layer])) return nextStep();
     cover("Now on your own",
-          "The page will be empty and the guide hidden. Draw this step again on your own, looking only at the reference picture.",
+          "The guide of this step will be hidden. Draw this step again on your own, looking at the reference "
+          + "picture. Your earlier steps stay faint, and you can show the guide of another step if it helps.",
           [["OK, start", startProbe]]);
   } else if (phase === "probe") {
     await submitProbe();
@@ -464,7 +502,7 @@ async function startProbe() {
 async function submitProbe() {
   if (sending) return;           // the timer and the Done button cannot both submit
   sending = true; busy(true);
-  const r = await post("/api/probe/submit", { strokes, timeout: timedOut });
+  const r = await post("/api/probe/submit", { strokes, timeout: timedOut, own_shown: ownShown() });
   busy(false); sending = false;
   if (r.error) return note(r.error);  // the timer keeps running; Done tries again
   stopTimer();

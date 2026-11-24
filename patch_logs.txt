@@ -134,3 +134,81 @@ Open
   - A second approved portrait is needed for Transfer.
   - File names now show the group: rename them before putting drawings in
     the I4 Google Form.
+
+2026-11-24 · Researcher app redesign, probe context, final image
+----------------------------------------------------------------
+(app/static/index.html, app/static/participant.html, app/server.py,
+app/tests/test_auto.py)
+
+Added
+  - Researcher app (index.html), new layout:
+      - Three columns: Candidates + Layers | board | one control box.
+      - Control box: Study session | Prepare targets on top, Drawing
+        full width below (>= 1500 px). On narrower screens it stacks in
+        one column, with Prepare targets last.
+      - A bar above the board shows Help per part as chips
+        (head ▮▮▮ L3 ++-); detail in each chip's tooltip. During a probe
+        or test the same bar shows the instruction, so the board keeps
+        one size in every mode.
+  - Board fills the window height (up to 900 px; was 600).
+  - Drawing grid: Grid button + 3x3 / 4x4 / 8x8 with a centre cross.
+    On screen only, never in strokes, exports or logs. Off and disabled
+    during probes and tests.
+  - Layers list, per step:
+      - ✓ on the thumbnail once the step was probed.
+      - ✎ show/hide my own strokes of that step on the canvas, including
+        the current and last step. On screen only. Drawing on a hidden
+        step shows it again.
+  - Probe context (both pages):
+      - The drawer's own earlier steps stay faint on the canvas.
+      - Guides of other steps can be switched on, off at the start, never
+        the probed step. Researcher: Layers checkboxes. Participant: "Show
+        the guide of another step" buttons.
+      - Shown at full guide strength (L3) as positioning context.
+      - Logged: probe events carry guides and own_shown; each toggle logs
+        a probe_guides event.
+  - Status bar (info / ok / error colours), spinner on the board while
+    targets generate, session chips (participant, group, task, target),
+    responsive session summary (Esc / click outside closes).
+
+Changed
+  - Researcher app: probes are optional. Next / Prev only move between
+    steps; a probe runs only from "Probe this layer" and returns to the
+    same step. The participant view keeps its v0.4 schedule (block-in,
+    skeleton, contours, once per pass).
+  - Probe of shading/shadow: the side reference shows the filled layer
+    (was its outline); the caption names the step. Scoring unchanged.
+  - Final practice image (server FINAL_LAYERS) = contours + shading +
+    shadow. Block-in and skeleton stay in their own step images only.
+  - /api/visible during a probe sets that probe's guides, apart from the
+    practice selection, which comes back after Submit.
+  - Wording: probe instructions on both pages mention the faint earlier
+    steps and the optional guides (blinding test still passes); help
+    paragraphs became heading tooltips; "Generate target" -> "Generate";
+    "Clear background" -> "Hide all"; "Researcher" tag removed.
+  - Blinding: the group chip is hidden while a probe or test is drawn in
+    the researcher app (e.g. Transfer).
+
+Fixed
+  - Researcher app: Next -> Prev -> Next asked for the same probe again,
+    and Next probed shading/shadow and the last step.
+  - Shadow probe reference looked like a line drawing of the face.
+  - Current/last step's own strokes could not be hidden for comparison.
+  - Controls column overflowed and scrolled on 1920x960; layout broke
+    below ~1100 px; no viewport meta for tablets.
+
+Tested
+  - 59/59 passed (about 5 min); 2 new:
+      - test_researcher_probes_only_on_request
+      - test_probe_guides_are_other_steps_only_and_logged
+    BOT01 and the practice-step test now check final = FINAL_LAYERS.
+  - Layouts checked in the test sandbox at 1920x960, 1280x720, 1024x768
+    and 600x1000.
+
+Open
+  - Probes with other steps' guides switched on still count fully for
+    fading (logged, not scored differently). Decide: keep, count as
+    neutral, or let them only raise help.
+  - docs/SketchFade_Study_Instruments_v0.4.docx and the README still
+    describe probes on a blank page and final = all steps.
+  - In the researcher app help levels change only through manual probes.

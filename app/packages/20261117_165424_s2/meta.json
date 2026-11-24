@@ -1,0 +1,21 @@
+{
+ "prompt": "old man with a beard",
+ "style": "pencil",
+ "seed": 2,
+ "source": "generated",
+ "confidence": {
+  "head": 0.521,
+  "eyes": 0.74,
+  "nose": 0.46,
+  "mouth": 0.362
+ },
+ "generator": "SD1.5+ControlNet+LCM",
+ "id": "20261117_165424_s2",
+ "created": "2026-11-17 16:54:24",
+ "review": {
+  "status": "approved",
+  "reviewer": "berrr",
+  "note": "",
+  "time": "2026-11-17 16:55:30"
+ }
+}

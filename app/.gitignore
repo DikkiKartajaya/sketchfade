@@ -10,3 +10,5 @@ __pycache__/
 # test runs (tests/test_auto.py)
 .pytest_cache/
 tests/output/
+# laptop-only settings of connect.bat (server login)
+connect.cfg

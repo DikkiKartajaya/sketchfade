@@ -52,6 +52,7 @@ Endpoints (all POST, JSON, points in 480x480 canvas space):
   /api/summary       {}                           -> {layers, best} best probe per layer
   /api/state         {}                           -> state     (no change)
   /api/erase         {kind: undo|clear|eraser, strokes} -> {ok} log what was removed on the canvas
+  /api/ping          {}                           -> {ok}      keep-alive (connect.bat), not logged
 
 Pages: / is the researcher app; /participant is the simplified participant view
 (static/participant.html) for the tablet, on the same session.
@@ -102,6 +103,12 @@ FINAL_LAYERS = [name for name in ghost.LAYERS if name not in ("block-in", "skele
 SHOW_TARGET = True  # development only: show the hidden generated target beside the canvas
 # one color per layer, so stacked layers stay apart on the canvas
 LAYER_RGB = [(194, 112, 61), (59, 143, 106), (70, 95, 170), (138, 90, 158), (80, 62, 50)]
+# Remote runs (serve_gpu.sh + connect.bat): the laptop pings /api/ping through the
+# SSH tunnel; with no request for this many seconds the server exits, so the GPU is
+# released even when the connection dropped without closing the SSH session.
+# 0 (default, local runs) = never.
+IDLE_EXIT = float(os.environ.get("SKETCHFADE_IDLE_EXIT") or 0)
+last_seen = time.time()
 
 for d in ("logs", "sessions", "participants", "exports"):
     os.makedirs(os.path.join(HERE, d), exist_ok=True)
@@ -674,6 +681,8 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
+        global last_seen
+        last_seen = time.time()
         if self.path == "/favicon.ico":
             self.send_response(204)
             self.end_headers()
@@ -691,8 +700,12 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, f.read(), "text/html; charset=utf-8")
 
     def do_POST(self):
-        t0 = time.time()
+        global last_seen
+        t0 = last_seen = time.time()
         n = int(self.headers.get("Content-Length", 0))
+        if self.path == "/api/ping":  # keep-alive from connect.bat; not logged, no lock
+            self.rfile.read(n)
+            return self._send(200, {"ok": True})
         try:
             payload = json.loads(self.rfile.read(n) or b"{}")
             with lock:
@@ -710,8 +723,21 @@ class Handler(BaseHTTPRequestHandler):
         self._send(code, out)
 
 
+def idle_watchdog():
+    """Exit when no request arrived for IDLE_EXIT seconds (laptop gone): the
+    process ends and the GPU memory is released."""
+    while True:
+        time.sleep(5)
+        idle = time.time() - last_seen
+        if idle > IDLE_EXIT:
+            log.info("=== SketchFade stop: no request for %.0fs (laptop disconnected), "
+                     "releasing the GPU ===", idle)
+            logging.shutdown()
+            os._exit(0)
+
+
 def main():
-    global engine
+    global engine, last_seen
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 9100
     log.info("=== SketchFade start, port %d ===", port)
     t0 = time.time()
@@ -723,6 +749,10 @@ def main():
     log.info("packages: %d (%d approved)", len(package.list_all()),
              sum(m["review"]["status"] == "approved" for m in package.list_all()))
     log.info("serving on http://127.0.0.1:%d", port)
+    if IDLE_EXIT > 0:
+        log.info("idle exit: stops after %.0fs without a request", IDLE_EXIT)
+        last_seen = time.time()  # model loading above does not count as idle
+        threading.Thread(target=idle_watchdog, daemon=True).start()
     try:
         ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
     except KeyboardInterrupt:

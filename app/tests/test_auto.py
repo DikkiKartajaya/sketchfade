@@ -352,6 +352,27 @@ class TestAPI:
         assert "part" not in r
         assert events(sb, "P01", "probe_stroke")
 
+    def test_probe_guides_are_other_steps_only_and_logged(self, sb):
+        """In a probe the drawer may switch on other steps' guides (off at the start, never the
+        probed step), kept apart from the practice selection and logged with the probe."""
+        import base64
+        import io
+
+        def ink(b64):  # opacity of the guide overlay
+            return np.asarray(Image.open(io.BytesIO(base64.b64decode(b64))).convert("RGBA"))[..., 3].max()
+
+        api("/api/start", participant="P01", group="adaptive", package="pkgA")
+        practice_visible = api("/api/layer", layer=1)["visible"]           # practising skeleton
+        st = api("/api/probe/start")
+        assert st["probe"] == 1 and st["visible"] == [] and ink(st["ghost"]) == 0   # starts off
+        st = api("/api/visible", visible=[0, 1])                          # 1 is the probed step
+        assert st["visible"] == [0] and ink(st["ghost"]) > 0
+        r = api("/api/probe/submit", strokes=[], own_shown=["block-in"])
+        assert r["visible"] == practice_visible                           # practice selection back
+        ev = events(sb, "P01", "probe")[-1]
+        assert ev["guides"] == ["block-in"] and ev["own_shown"] == ["block-in"]
+        assert events(sb, "P01", "probe_guides")[-1]["guides"] == ["block-in"]
+
     def test_adaptive_group_fades_after_two_successful_probes(self, sb):
         api("/api/start", participant="P01", group="adaptive", package="pkgA")
         good = perfect_strokes(server.S["layers"][0])
@@ -429,7 +450,10 @@ class TestAPI:
         steps = [np.asarray(Image.open(sb / "exports" / f)) for f in files[:5]]
         final = np.asarray(Image.open(sb / "exports" / files[5]))
         assert all(s.shape == (480, 480) and s.min() == 0 and s.max() == 255 for s in steps)
-        assert (final == np.minimum.reduce(steps)).all()           # final = every step on one page
+        finishing = [steps[ghost.LAYERS.index(n)] for n in server.FINAL_LAYERS]
+        assert (final == np.minimum.reduce(finishing)).all()       # final = finishing steps on one page,
+        for n in ("block-in", "skeleton"):                         # construction lines left out
+            assert ((steps[ghost.LAYERS.index(n)] == 0) & (final == 255)).any()
         api("/api/layer", layer=0)                                  # Practise again / next block
         assert api("/api/practice/step", strokes=line(0))["pass"] == 2
         api("/api/layer", layer=1)
@@ -749,6 +773,61 @@ class TestBrowser:
         assert (row["stage"], row["target"], row["kind"]) == ("transfer", "pkgB", "test")
         assert re.fullmatch(rf"adaptive/final/P01_adaptive_transfer_[0-9a-f]{{8}}\.png", row["file"])
         assert (sb / "exports" / row["file"]).exists()
+
+    def test_researcher_probes_only_on_request(self, browser, live, sb):
+        """Researcher app (/): Next and Prev only move between steps, never probe; a probe runs
+        only from 'Probe this layer', stays on the same step and marks it; a tone probe shows
+        the filled layer."""
+        page = browser.new_page()
+        page.goto(live + "/")
+        page.wait_for_function("[...document.querySelectorAll('#pkg option')].some(o => o.value === 'pkgA')")
+        page.fill("#pid", "P01")
+        page.select_option("#pkg", "pkgA")
+        with page.expect_response(lambda r: r.url.endswith("/api/start")):
+            page.click("#start")
+
+        def at(n):
+            page.wait_for_function("n => document.getElementById('layer').textContent.startsWith(n + '.')",
+                                   arg=n)
+
+        at(1)
+        with api_responses(page) as got:
+            for n in range(1, 5):                                # Next through every step
+                stroke(page)
+                with page.expect_response(lambda r: r.url.endswith("/api/layer")):
+                    page.click("#next")
+                at(n + 1)
+            with page.expect_response(lambda r: r.url.endswith("/api/layer")):
+                page.click("#prev")
+            at(4)
+        assert not any(r.url.endswith("/api/probe/start") for r in got)
+        assert events(sb, "P01", "probe") == []
+        with page.expect_response(lambda r: r.url.endswith("/api/layer")):
+            page.click("#next")
+        at(5)
+        assert page.is_disabled("#next")                         # last step
+        with page.expect_response(lambda r: r.url.endswith("/api/layer")):
+            page.click("#prev")
+        with page.expect_response(lambda r: r.url.endswith("/api/layer")):
+            page.click("#prev")
+        at(3)
+        with page.expect_response(lambda r: r.url.endswith("/api/probe/start")):
+            page.click("#probe")                                 # an optional probe of contours
+        stroke(page)
+        with page.expect_response(lambda r: r.url.endswith("/api/probe/submit")):
+            page.click("#submit")
+        at(3)                                                    # stays on the same step
+        assert page.locator(".lcard .pmark").count() == 1        # contours marked as probed
+        assert [e["probe_layer"] for e in events(sb, "P01", "probe")] == ["contours"]
+        for n in (3, 4):
+            with page.expect_response(lambda r: r.url.endswith("/api/layer")):
+                page.click("#next")
+            at(n + 1)
+        with page.expect_response(lambda r: r.url.endswith("/api/probe/start")):
+            page.click("#probe")                                 # a manual probe of a tone step
+        assert page.evaluate("document.getElementById('ref').src.endsWith(st.thumbs[4])")
+        assert "5. shadow" in page.text_content("#refNote")
+        page.close()
 
     def test_portrait_choice_is_kept_between_tasks(self, ui):
         setup(ui, "P01", "warmup", pkg="pkgA")                  # not the default (newest) one
@@ -1089,8 +1168,9 @@ class TestBrowser:
             final = np.asarray(Image.open(exports / next(r["file"] for r in practice
                                                          if r["stage"] == "final" and r["pass"] == n)))
             assert all(s.shape == (480, 480) and s.min() == 0 for s in steps)   # ink in every step
-            assert (final == np.minimum.reduce(steps)).all()                    # final = all steps
-            assert (final == 0).sum() > max((s == 0).sum() for s in steps)
+            finishing = [steps[ghost.LAYERS.index(name)] for name in server.FINAL_LAYERS]
+            assert (final == np.minimum.reduce(finishing)).all()    # final = finishing steps only:
+            assert (final == 0).sum() > max((s == 0).sum() for s in finishing)  # no block-in/skeleton
         assert len(practice) == 12                                  # (5 steps + final) x 2 passes
         assert len(events(sb, pid, "practice_step")) == 10
         assert len(events(sb, pid, "probe")) == 6

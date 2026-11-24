@@ -15,12 +15,15 @@ Two modes, following the final proposal (Lecture 4):
     construction layer is shown as a thumbnail and can be shown on or hidden
     from the canvas background; visible layers stack, each in its own color.
     Moving to a layer shows it. The per-part help level still sets how strongly
-    each visible layer is drawn, and probes and tests show none.
+    each visible layer is drawn. Tests show none; a probe starts with none, and the
+    drawer may switch on guides of other steps (never the probed one), logged per probe.
 
   Study (per participant): Start {participant, group, package} -> tasks
     practice   help per part from the participant's level (L3..L0); fixed
-               group always L3. Each layer ends with an unassisted probe in
-               a blank area (both groups); the probe decides the level.
+               group always L3. Each line step ends with a probe: the step
+               redrawn without its guide (both groups; the drawer's own earlier
+               steps and, if switched on, other steps' guides as context); the
+               probe decides the level.
     baseline / post / retention / transfer
                formal tests: no overlay, correction, Check or feedback;
                the drawing is saved as exports/<group>/final/
@@ -37,11 +40,13 @@ Endpoints (all POST, JSON, points in 480x480 canvas space):
   /api/start         {participant, group, package}-> state
   /api/task          {task}                       -> state
   /api/layer         {layer}                      -> state
-  /api/visible       {visible}                    -> state     layers on the canvas
+  /api/visible       {visible}                    -> state     layers on the canvas; during a
+                                                               probe: other steps' guides (off at start)
   /api/stroke        {pts, w}                     -> state + {pts, part, err}
   /api/check         {}                           -> state     L1 parts shown
   /api/probe/start   {}                           -> state
-  /api/probe/submit  {strokes}                    -> state + {results, changes}
+  /api/probe/submit  {strokes, own_shown}         -> state + {results, changes}
+                     (logs the guides and own earlier steps shown during the probe)
   /api/export        {strokes}                    -> {code, file}   formal test drawing
   /api/practice/step {strokes}                    -> {pass, files}  practice step image(s)
   /api/summary       {}                           -> {layers, best} best probe per layer
@@ -92,6 +97,8 @@ N_CHOICES = 4
 GEN = generate.available()  # False -> retrieval target (no diffusers installed)
 TASKS = ["practice", "baseline", "post", "retention", "transfer"]
 TEST_REF_LAYER = ghost.LAYERS.index("contours")  # side reference in formal tests
+# the final practice image: construction lines (block-in, skeleton) erased, as in a finished drawing
+FINAL_LAYERS = [name for name in ghost.LAYERS if name not in ("block-in", "skeleton")]
 SHOW_TARGET = True  # development only: show the hidden generated target beside the canvas
 # one color per layer, so stacked layers stay apart on the canvas
 LAYER_RGB = [(194, 112, 61), (59, 143, 106), (70, 95, 170), (138, 90, 158), (80, 62, 50)]
@@ -258,12 +265,14 @@ def choice_thumb(layers):
 
 # --- state -------------------------------------------------------------------
 
-def overlay(levels, check):
+def overlay(levels, check, shown=None):
     """Visible layers stacked on the canvas (tone fills below lines), each in its
-    own color, at the per-part help level. Check also reveals the current layer."""
+    own color, at the per-part help level. Check also reveals the current layer.
+    shown: the layers to stack (default: the practice selection)."""
     rgb = np.zeros((CANVAS, CANVAS, 3), np.float32)  # premultiplied
     alpha = np.zeros((CANVAS, CANVAS, 1), np.float32)
-    shown = S["visible"] | {S["layer"]} if check else S["visible"]
+    if shown is None:
+        shown = S["visible"] | {S["layer"]} if check else S["visible"]
     for i in sorted(shown, key=lambda i: ghost.LAYERS[i] not in ghost.FILLED):
         a = fading.ghost(S["layers"], i, levels, check)[..., None]
         rgb = np.float32(LAYER_RGB[i]) * a + rgb * (1 - a)
@@ -275,8 +284,16 @@ def state(check=False):
     c = S["ctrl"]
     levels = c.levels()
     on = helped()
-    g, rgb = (overlay(levels, check and on) if on
-              else (np.zeros((CANVAS, CANVAS)), (0, 0, 0)))
+    probe = S["probe"]
+    if on:
+        g, rgb = overlay(levels, check)
+    elif probe and probe["guides"]:
+        # probe context: guides of other steps the drawer switched on (never the probed
+        # step), at the strongest level for every part: context to place the redraw, not
+        # the practised help. Every probe logs which were on.
+        g, rgb = overlay([fading.L3] * len(ghost.PARTS), False, probe["guides"])
+    else:
+        g, rgb = np.zeros((CANVAS, CANVAS)), (0, 0, 0)
     ref_layer = (S["probe"]["layer"] if S["probe"] else
                  S["layer"] if S["task"] == "practice" else TEST_REF_LAYER)
     ref = fading.guide_mask(S["layers"][ref_layer]) > 0
@@ -294,7 +311,8 @@ def state(check=False):
         # layers panel: each layer in full, its color, and what is on the canvas
         "thumbs": [rgba_png((L > 0) * 0.9, LAYER_RGB[i]) for i, L in enumerate(S["layers"])],
         "colors": ["#%02x%02x%02x" % col for col in LAYER_RGB],
-        "visible": sorted(S["visible"]),
+        # during a probe: the guides switched on for it (the practice selection comes back after)
+        "visible": sorted(probe["guides"] if probe else S["visible"]),
         # prepare mode only: a study session (package loaded) never sends the target,
         # so it cannot reach the participant's tablet
         "target_img": (gray_png(S["gray"]) if SHOW_TARGET and S["gray"] is not None
@@ -337,6 +355,8 @@ def on_stroke(p):
 
 def probe_submit(p):
     layer = S["probe"]["layer"]
+    guides = [ghost.LAYERS[i] for i in sorted(S["probe"]["guides"])]
+    own = [str(x) for x in p.get("own_shown", [])]  # the drawer's earlier steps shown faint
     strokes = p.get("strokes", [])
     drawn = rasterize(strokes)
     results = fading.score_probe(drawn, S["layers"][layer])
@@ -351,6 +371,7 @@ def probe_submit(p):
           levels_before=before, levels_after=S["ctrl"].levels(),
           changes=[{"part": a, "from": b, "to": c} for a, b, c in changes],
           strokes=[s["pts"] for s in strokes],
+          guides=guides, own_shown=own,     # context shown during the probe
           timeout=bool(p.get("timeout")))  # True: submitted by the probe time limit
     S["probe"] = None
     return {**state(), "results": results,
@@ -360,7 +381,7 @@ def probe_submit(p):
 # --- saved drawings --------------------------------------------------------------
 # exports/<group>/<folder>/<participant>_<group>_<stage>[_pass<N>]_<key>.png
 #   folder   block-in .. shadow: one practice step (only that step's strokes)
-#            final: a practice pass with every step combined (stage "final"), and the
+#            final: a practice pass, its finishing steps combined (FINAL_LAYERS, stage "final"), and the
 #                   formal test drawings (stage = baseline / post / retention / transfer)
 #   key      8 random hex digits, so a file name never repeats
 # exports/index.csv lists every saved drawing (one row each).
@@ -417,8 +438,9 @@ def practice_pass(c):
 def practice_step(p):
     """Practice step done -> exports/<group>/<layer>/<participant>_<group>_<layer>_pass<N>_<key>.png;
     after the last step also exports/<group>/final/<participant>_<group>_final_pass<N>_<key>.png
-    (every step of the pass combined). Step 1 starts a new pass, so a second practice
-    block or Practise again never overwrites an earlier one."""
+    (the finishing steps of the pass combined, FINAL_LAYERS: construction lines erased, as in
+    a finished drawing; block-in and skeleton stay in their own step images). Step 1 starts a
+    new pass, so a second practice block or Practise again never overwrites an earlier one."""
     c = S["ctrl"]
     if not c.path:
         return {"error": "practice images need a study session"}
@@ -428,15 +450,16 @@ def practice_step(p):
     n = latest + 1 if S["layer"] == 0 or latest == 0 else latest
     strokes = p.get("strokes", [])
     files = [save_drawing(strokes_png(strokes), "practice", ghost.LAYERS[S["layer"]], n)]
-    if S["layer"] == len(ghost.LAYERS) - 1:  # last step: every step of this pass combined
+    if S["layer"] == len(ghost.LAYERS) - 1:  # last step: the finishing steps of this pass combined
         steps = []
-        for layer in ghost.LAYERS:  # the newest image of each step in this pass
+        for layer in FINAL_LAYERS:  # the newest image of each finishing step in this pass
             folder = os.path.join(HERE, "exports", c.group, layer)
             mine = [os.path.join(folder, f) for f in os.listdir(folder)
                     if f.startswith(f"{c.participant}_{c.group}_{layer}_pass{n}_")]
             if mine:
                 steps.append(np.asarray(Image.open(max(mine, key=os.path.getmtime))))
-        files.append(save_drawing(Image.fromarray(np.minimum.reduce(steps)), "practice", "final", n))
+        final = np.minimum.reduce(steps) if steps else np.asarray(strokes_png([]))
+        files.append(save_drawing(Image.fromarray(final), "practice", "final", n))
     event("practice_step", pass_no=n, files=files, n_strokes=len(strokes))
     log.info("practice step saved: %s", ", ".join(f"exports/{f}" for f in files))
     return {"pass": n, "files": files}
@@ -582,8 +605,14 @@ def handle(path, p):
         event("layer", levels=S["ctrl"].levels())
         return state()
     if path == "/api/visible":
-        S["visible"] = {int(i) for i in p.get("visible", [])
-                        if 0 <= int(i) < len(ghost.LAYERS)}
+        want = {int(i) for i in p.get("visible", []) if 0 <= int(i) < len(ghost.LAYERS)}
+        if S["probe"]:  # probe context: other steps' guides only, apart from the practice selection
+            S["probe"]["guides"] = want - {S["probe"]["layer"]}
+            names = [ghost.LAYERS[i] for i in sorted(S["probe"]["guides"])]
+            log.info("probe guides: %s", ",".join(names) or "none")
+            event("probe_guides", guides=names)
+            return state()
+        S["visible"] = want
         names = [ghost.LAYERS[i] for i in sorted(S["visible"])]
         log.info("visible layers: %s", ",".join(names) or "none")
         event("visible", visible=names)
@@ -602,7 +631,7 @@ def handle(path, p):
     if path == "/api/probe/start":
         if S["task"] != "practice":
             return {"error": "probes run during practice"}
-        S["probe"] = {"layer": S["layer"], "t0": time.time()}
+        S["probe"] = {"layer": S["layer"], "t0": time.time(), "guides": set()}  # guides start off
         log.info("probe start layer=%s", ghost.LAYERS[S["layer"]])
         event("probe_start", levels=S["ctrl"].levels())
         return state()

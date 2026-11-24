@@ -1,0 +1,21 @@
+{
+ "prompt": "old man with a hat",
+ "style": "pencil",
+ "seed": 3,
+ "source": "generated",
+ "confidence": {
+  "head": 0.257,
+  "eyes": 0.938,
+  "nose": 0.92,
+  "mouth": 0.938
+ },
+ "generator": "SD1.5+ControlNet+LCM",
+ "id": "20261124_201441_s3",
+ "created": "2026-11-24 20:14:42",
+ "review": {
+  "status": "approved",
+  "reviewer": "berlin",
+  "note": "",
+  "time": "2026-11-24 20:14:50"
+ }
+}
